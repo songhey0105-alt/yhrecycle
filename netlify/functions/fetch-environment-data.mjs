@@ -89,7 +89,7 @@ export default async () => {
   });
 };
 
-// 매일 자정(UTC) 자동 실행 — 한국시간 오전 9시
+// 매주 자동 실행 (매주 월요일 00:00 UTC — 한국시간 월요일 오전 9시)
 export const config = {
-  schedule: '@daily',
+  schedule: '0 0 * * 1',
 };
