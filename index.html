@@ -279,6 +279,9 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
 
       <div class="section-title">운영기간 · 통과 Bed Volume</div>
       <div class="grid grid-2" id="predictGauges"></div>
+
+      <div class="section-title">환경 데이터 (강수량 · 수온)</div>
+      <div class="grid grid-2" id="predictEnvCharts"></div>
     </section>
 
     <!-- 재생·공급 최적화 -->
@@ -778,7 +781,7 @@ function trendChart(data, opts={}){
   }).join('');
   const monthLabels = data.map((d,i)=>{
     if(i!==n-1 && i%3!==0) return '';
-    const label = (i===n-1) ? '현재' : `${n-1-i}개월 전`;
+    const label = opts.labels ? opts.labels[i] : ((i===n-1) ? '현재' : `${n-1-i}개월 전`);
     return `<span class="trend-month" style="left:${(i*stepX).toFixed(2)}%;">${label}</span>`;
   }).join('');
 
@@ -871,6 +874,7 @@ function renderPredict(){
     document.getElementById('predictBasicInfo').innerHTML = '';
     document.getElementById('predictCharts').innerHTML = '';
     document.getElementById('predictGauges').innerHTML = '';
+    document.getElementById('predictEnvCharts').innerHTML = '';
     return;
   }
   if(!plantById(state.plantId)) state.plantId = PLANTS[0].id;
@@ -937,6 +941,63 @@ function renderPredictDetail(){
       <div class="indicator-meta" style="margin-top:6px;">기준 ${ind.trigger.toLocaleString('ko-KR')} ${ind.unit} 대비 ${pct}%</div>
     </div>`;
   }).join('');
+
+  renderPredictEnvCharts(plant.id);
+}
+
+let envChartsRequestId = 0;
+async function renderPredictEnvCharts(plantId){
+  const requestId = ++envChartsRequestId;
+  const container = document.getElementById('predictEnvCharts');
+  container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">환경 데이터를 불러오는 중...</div>`;
+
+  let rows = [];
+  try{
+    const {data, error} = await sb.from('environment_data').select('*').eq('plant_id', plantId).order('recorded_date', {ascending:true});
+    if(error) throw error;
+    rows = data || [];
+  }catch(e){
+    if(requestId !== envChartsRequestId) return;
+    container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">환경 데이터를 불러오지 못했습니다.</div>`;
+    return;
+  }
+  if(requestId !== envChartsRequestId) return;
+
+  if(rows.length < 2){
+    container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">아직 쌓인 환경 데이터가 충분하지 않습니다 (${rows.length}건). 매주 자동으로 쌓입니다.</div>`;
+    return;
+  }
+
+  const dateLabels = rows.map(r=>{
+    const d = new Date(r.recorded_date);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  });
+  const precip = rows.map(r=>Number(r.precipitation_mm)||0);
+  const watertemp = rows.map(r=>Number(r.water_temp_c)||0);
+  const latest = rows[rows.length-1];
+
+  container.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="indicator-name">강수량</div>
+          <div class="indicator-meta">주 단위로 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
+        </div>
+        <div class="indicator-value">${fmt(latest.precipitation_mm)} <span style="font-size:11px; color:var(--muted);">mm</span></div>
+      </div>
+      ${trendChart(precip, {labels: dateLabels})}
+    </div>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="indicator-name">수온</div>
+          <div class="indicator-meta">주 단위로 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
+        </div>
+        <div class="indicator-value">${fmt(latest.water_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
+      </div>
+      ${trendChart(watertemp, {labels: dateLabels})}
+    </div>
+  `;
 }
 
 /* ===================== 사전보고서 ===================== */
