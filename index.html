@@ -961,10 +961,10 @@ function renderHome(){
       const isExtra = i>0;
       tableRows.push(`<tr ${isExtra && !isExpanded ? 'style="display:none;"' : ''} data-plant-group="${plant.id}">
         <td>
-          <div style="display:flex; align-items:center; gap:6px;">
+          ${i===0 ? `<div style="display:flex; align-items:center; gap:6px;">
             <strong>${plant.name}</strong>
-            ${i===0 && flagged.length>1 ? `<button class="toggle-btn" data-toggle-home-plant="${plant.id}">${isExpanded?'▲':'▼'}</button>` : ''}
-          </div>
+            ${flagged.length>1 ? `<button class="toggle-btn" data-toggle-home-plant="${plant.id}">${isExpanded?'▲':'▼'}</button>` : ''}
+          </div>` : ''}
         </td>
         <td>${basinLabel(be.basin)}</td>
         <td>${badgeHtml(be.ev.status)}</td>
