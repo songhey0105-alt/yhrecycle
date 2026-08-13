@@ -948,18 +948,25 @@ function donutChartSvg(plantId, c, w, n){
     return `<svg viewBox="0 0 100 110" style="width:150px; height:150px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
   }
 
+  function pointOnRing(pct){
+    const angleDeg = pct/100*360 - 90;
+    const angleRad = angleDeg*Math.PI/180;
+    return {x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad)};
+  }
+
   let cumulative = 0, topRings = '', labels = '';
   segments.forEach(seg=>{
     const pct = seg.count/total*100;
     if(pct>0){
-      const dash = circumference*pct/100;
-      const offset = -(cumulative/100)*circumference;
-      topRings += `<circle class="donut-slice" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
-      const midAngleDeg = (cumulative + pct/2)/100*360 - 90;
-      const midAngleRad = midAngleDeg*Math.PI/180;
-      const lx = cx + r*Math.cos(midAngleRad);
-      const ly = cy + r*Math.sin(midAngleRad);
-      labels += `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.5); stroke-width:3px; stroke-linejoin:round; pointer-events:none;">${seg.count}</text>`;
+      const startPct = cumulative;
+      const endPct = Math.min(cumulative+pct, startPct+99.97);
+      const start = pointOnRing(startPct);
+      const end = pointOnRing(endPct);
+      const largeArc = (endPct-startPct) > 50 ? 1 : 0;
+      const d = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(3)} ${end.y.toFixed(3)}`;
+      topRings += `<path class="donut-slice" d="${d}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
+      const mid = pointOnRing(cumulative + pct/2);
+      labels += `<text x="${mid.x.toFixed(2)}" y="${mid.y.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.5); stroke-width:3px; stroke-linejoin:round; pointer-events:none;">${seg.count}</text>`;
     }
     cumulative += pct;
   });
