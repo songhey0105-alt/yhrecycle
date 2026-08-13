@@ -94,6 +94,8 @@ a{color:var(--accent); text-decoration:none;}
 .toggle-btn:hover{border-color:var(--accent); color:var(--accent);}
 .legend-item{cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--muted); transition:color .15s ease;}
 .legend-item:hover{color:var(--text-strong);}
+.donut-slice{transition:stroke-width .18s ease, filter .18s ease; transform-box:fill-box; transform-origin:center;}
+.donut-slice:hover{stroke-width:22; filter:brightness(1.2) drop-shadow(0 0 5px rgba(255,255,255,.4));}
 
 .plant-chip{position:relative; display:inline-flex;}
 .plant-chip input{padding-right:14px;}
@@ -972,7 +974,7 @@ function donutChartSvg(plantId, c, w, n){
     if(pct>0){
       const dash = circumference*pct/100;
       const offset = -(cumulative/100)*circumference;
-      topRings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
+      topRings += `<circle class="donut-slice" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
       const midAngleDeg = (cumulative + pct/2)/100*360 - 90;
       const midAngleRad = midAngleDeg*Math.PI/180;
       const lx = cx + r*Math.cos(midAngleRad);
@@ -1002,7 +1004,7 @@ function renderHome(){
     const n = summary.basinEvals.filter(be=>be.ev.status==='정상').length;
     const total = c+w+n;
     return `<div class="card" style="text-align:center;">
-      <div class="indicator-name">${plant.name} <span style="font-weight:400; color:var(--muted); font-size:12px;">(총 ${total}지)</span></div>
+      <div style="font-size:20px; font-weight:800; color:var(--text-strong); letter-spacing:-0.01em;">${plant.name} <span style="font-weight:500; color:var(--muted); font-size:13px;">(총 ${total}지)</span></div>
       <div style="margin:14px auto; width:150px;">${donutChartSvg(plant.id, c, w, n)}</div>
       <div style="display:flex; justify-content:center; gap:14px;">
         <div class="legend-item" data-plant-status="${plant.id}|임박"><span class="dot" style="background:var(--red-text);"></span>임박</div>
