@@ -253,7 +253,7 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
       <div class="page-header"><h1>전체 현황</h1><p>낙동강수계 정수장·재생시설·비축창고 현황을 한눈에 확인합니다.</p></div>
 
       <div class="section-title" style="margin-top:0;">각 정수장 흡착지 상태 비율</div>
-      <div class="grid grid-4" id="homePieCharts"></div>
+      <div class="grid grid-2" id="homePieCharts"></div>
 
       <div class="section-title">정수장별 상태</div>
       <div class="card table-wrap">
@@ -933,35 +933,64 @@ function switchView(view){
 }
 
 /* ===================== 전체 현황 ===================== */
-function donutChartSvg(c, w, n){
+function donutChartSvg(plantId, c, w, n){
   const total = c+w+n;
-  const cx=50, cy=50, r=32, strokeW=16;
+  const cx=50, cy=48, r=32, strokeW=17, depth=7;
   const circumference = 2*Math.PI*r;
   const segments = [
-    {count:c, color:'var(--red-text)'},
-    {count:w, color:'var(--amber-text)'},
-    {count:n, color:'var(--green-text)'},
+    {key:'임박', count:c, color:'var(--red-text)'},
+    {key:'주의', count:w, color:'var(--amber-text)'},
+    {key:'정상', count:n, color:'var(--green-text)'},
   ];
   if(total===0){
-    return `<svg viewBox="0 0 100 100" style="width:96px; height:96px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
+    return `<svg viewBox="0 0 100 110" style="width:150px; height:150px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
   }
-  let cumulative = 0;
-  let rings = '', labels = '';
+
+  function ringPath(dy, opacityMul){
+    let cumulative = 0, out = '';
+    segments.forEach(seg=>{
+      const pct = seg.count/total*100;
+      if(pct>0){
+        const dash = circumference*pct/100;
+        const offset = -(cumulative/100)*circumference;
+        out += `<circle cx="${cx}" cy="${cy+dy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy+dy})" opacity="${opacityMul}" pointer-events="none"/>`;
+      }
+      cumulative += pct;
+    });
+    return out;
+  }
+
+  // extruded "side" layers for a 3D look (several thin dark offsets stacked beneath)
+  let sideLayers = '';
+  for(let i=depth; i>=1; i--){
+    sideLayers += ringPath(i, 0.55);
+  }
+
+  let cumulative = 0, topRings = '', labels = '';
   segments.forEach(seg=>{
     const pct = seg.count/total*100;
     if(pct>0){
       const dash = circumference*pct/100;
       const offset = -(cumulative/100)*circumference;
-      rings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      topRings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
       const midAngleDeg = (cumulative + pct/2)/100*360 - 90;
       const midAngleRad = midAngleDeg*Math.PI/180;
       const lx = cx + r*Math.cos(midAngleRad);
       const ly = cy + r*Math.sin(midAngleRad);
-      labels += `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:3px; stroke-linejoin:round;">${seg.count}</text>`;
+      labels += `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.5); stroke-width:3px; stroke-linejoin:round; pointer-events:none;">${seg.count}</text>`;
     }
     cumulative += pct;
   });
-  return `<svg viewBox="0 0 100 100" style="width:96px; height:96px;">${rings}${labels}</svg>`;
+
+  const glossDash = circumference*0.4;
+  const gloss = `<circle cx="${cx}" cy="${cy}" r="${r-strokeW/2+3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3" stroke-dasharray="${glossDash.toFixed(2)} ${(circumference-glossDash).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" pointer-events="none"/>`;
+
+  return `<svg viewBox="0 0 100 110" style="width:150px; height:150px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.4));">
+    <g>${sideLayers}</g>
+    <g>${topRings}</g>
+    ${gloss}
+    <g>${labels}</g>
+  </svg>`;
 }
 
 function renderHome(){
@@ -974,7 +1003,7 @@ function renderHome(){
     const total = c+w+n;
     return `<div class="card" style="text-align:center;">
       <div class="indicator-name">${plant.name} <span style="font-weight:400; color:var(--muted); font-size:12px;">(총 ${total}지)</span></div>
-      <div style="margin:14px auto; width:96px;">${donutChartSvg(c, w, n)}</div>
+      <div style="margin:14px auto; width:150px;">${donutChartSvg(plant.id, c, w, n)}</div>
       <div style="display:flex; justify-content:center; gap:14px;">
         <div class="legend-item" data-plant-status="${plant.id}|임박"><span class="dot" style="background:var(--red-text);"></span>임박</div>
         <div class="legend-item" data-plant-status="${plant.id}|주의"><span class="dot" style="background:var(--amber-text);"></span>주의</div>
