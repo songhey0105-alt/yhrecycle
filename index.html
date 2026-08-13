@@ -251,6 +251,9 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
       <div class="page-header"><h1>전체 현황</h1><p>낙동강수계 정수장·재생시설·비축창고 현황을 한눈에 확인합니다.</p></div>
       <div id="homeSummary" class="grid grid-4"></div>
 
+      <div class="section-title">정수장별 지 상태 비율</div>
+      <div class="grid grid-4" id="homePieCharts"></div>
+
       <div class="section-title">정수장별 상태</div>
       <div class="card table-wrap">
         <table id="plantTable"></table>
@@ -945,6 +948,31 @@ function renderHome(){
   document.querySelectorAll('[data-category]').forEach(btn=>{
     btn.addEventListener('click', ()=>openCategoryModal(btn.getAttribute('data-category')));
   });
+
+  document.getElementById('homePieCharts').innerHTML = summaries.map(({plant, summary})=>{
+    const c = summary.basinEvals.filter(be=>be.ev.status==='임박').length;
+    const w = summary.basinEvals.filter(be=>be.ev.status==='주의').length;
+    const n = summary.basinEvals.filter(be=>be.ev.status==='정상').length;
+    const total = c+w+n;
+    let gradient = 'var(--border)';
+    if(total>0){
+      const cPct = c/total*100;
+      const wPct = w/total*100;
+      gradient = `conic-gradient(var(--red-text) 0% ${cPct}%, var(--amber-text) ${cPct}% ${cPct+wPct}%, var(--green-text) ${cPct+wPct}% 100%)`;
+    }
+    return `<div class="card" style="text-align:center;">
+      <div class="indicator-name" style="margin-bottom:14px;">${plant.name}</div>
+      <div style="position:relative; width:96px; height:96px; margin:0 auto;">
+        <div style="width:100%; height:100%; border-radius:50%; background:${gradient};"></div>
+        <div style="position:absolute; inset:16px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:var(--text-strong);">${total}지</div>
+      </div>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:14px; font-size:11px; color:var(--muted); flex-wrap:wrap;">
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span class="dot" style="background:var(--red-text);"></span>임박 ${c}</span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span class="dot" style="background:var(--amber-text);"></span>주의 ${w}</span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span class="dot" style="background:var(--green-text);"></span>정상 ${n}</span>
+      </div>
+    </div>`;
+  }).join('') || `<div class="card" style="color:var(--muted); font-size:13px;">등록된 정수장이 없습니다.</div>`;
 
   const tableRows = [];
   summaries.forEach(({plant, summary})=>{
