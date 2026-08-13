@@ -500,7 +500,7 @@ const DEFAULT_PLANTS = [
 const DEFAULT_FACILITY = {capacityPerDay: 2.6};
 
 const DEFAULT_WAREHOUSES = [
-  {id:'W1', name:'구미 입상활성탄 비축창고', capacity:180, stock:90, safety:75, dailyOutflow:3.0},
+  {id:'W1', name:'구미 입상활성탄 비축창고', capacity:4200, stock:90, safety:75, dailyOutflow:3.0},
 ];
 
 /* 흡착지(지) 고정 구성: 구미 18지(GAC12+F/A6), 고령 GAC5지, 반송 F/A10지, 연초 F/A4지 */
@@ -769,6 +769,12 @@ const KB = [
   {keys:['한강'],
     answer:'이 대시보드는 낙동강수계 기준만 적용하고 있어요. 한강수계는 맛·냄새물질(Geosmin) 중심의 별도 기준(운영기간 3년 또는 BV 100,000)을 사용하는데, 이번 버전 범위 밖입니다.',
     source:'위 문헌, 표4'},
+  {keys:['밀양'],
+    answer:'밀양(정) 활성탄 재생시설의 시설용량은 30㎥/일입니다.',
+    source:'재생시설 시설 제원'},
+  {keys:['구미 비축창고','구미 창고','비축창고 시설용량','창고 시설용량','창고 용량'],
+    answer:'구미 비축창고의 시설용량은 4,200㎥입니다.',
+    source:'비축창고 시설 제원'},
 ];
 
 /* ===================== 상태 ===================== */
@@ -1394,7 +1400,7 @@ function renderOptimize(){
       <div class="priority-rank">${i+1}</div>
       <div class="priority-body">
         <div class="priority-title">${w.name}</div>
-        <div class="priority-sub">현재재고 ${w.stock}톤 / 안전재고 ${w.safety}톤 ${deficit>0?`· 부족 ${deficit}톤`:'· 정상'}</div>
+        <div class="priority-sub">현재재고 ${w.stock}㎥ / 안전재고 ${w.safety}㎥ ${deficit>0?`· 부족 ${deficit}㎥`:'· 정상'}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.round(w.stock/w.capacity*100))}%; background:${deficit>0?'var(--red-text)':'var(--accent)'};"></div></div>
       </div>
     </div>`;
@@ -1458,7 +1464,7 @@ function runSimulation(){
             <div class="indicator-value">${p.depletionDay!==null ? `D+${p.depletionDay}일 부족 예상` : '기간 내 안전'}</div>
           </div>
           ${sparkline(p.series, {threshold: p.warehouse.safety})}
-          <div class="indicator-meta">점선: 안전재고(${p.warehouse.safety}톤) · 시작 ${p.series[0]}톤 → ${period}일 후 ${p.series[p.series.length-1]}톤</div>
+          <div class="indicator-meta">점선: 안전재고(${p.warehouse.safety}㎥) · 시작 ${p.series[0]}㎥ → ${period}일 후 ${p.series[p.series.length-1]}㎥</div>
         </div>
       `).join('')}
     </div>
@@ -1489,7 +1495,7 @@ function renderAdmin(){
 
   document.getElementById('adminWarehouseTable').innerHTML = `
     <thead><tr>
-      <th>창고명</th><th>용량(톤)</th><th>현재재고(톤)</th><th>안전재고(톤)</th><th>일일 소모량(톤/일)</th><th></th>
+      <th>창고명</th><th>용량(㎥)</th><th>현재재고(㎥)</th><th>안전재고(㎥)</th><th>일일 소모량(㎥/일)</th><th></th>
     </tr></thead>
     <tbody>
       ${WAREHOUSES.map(w=>`
