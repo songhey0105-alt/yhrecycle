@@ -937,7 +937,8 @@ function switchView(view){
 /* ===================== 전체 현황 ===================== */
 function donutChartSvg(plantId, c, w, n){
   const total = c+w+n;
-  const cx=50, cy=48, r=32, strokeW=17;
+  const cx=50, cy=44, r=30, strokeW=17, depth=9;
+  const outerR = r+strokeW/2, innerR = r-strokeW/2;
   const circumference = 2*Math.PI*r;
   const segments = [
     {key:'임박', count:c, color:'var(--red-text)'},
@@ -945,36 +946,46 @@ function donutChartSvg(plantId, c, w, n){
     {key:'정상', count:n, color:'var(--green-text)'},
   ];
   if(total===0){
-    return `<svg viewBox="0 0 100 110" style="width:150px; height:150px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
+    return `<svg viewBox="0 0 100 115" style="width:150px; height:150px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
   }
 
-  function pointOnRing(pct){
+  function pointAt(radius, pct){
     const angleDeg = pct/100*360 - 90;
     const angleRad = angleDeg*Math.PI/180;
-    return {x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad)};
+    return {x: cx + radius*Math.cos(angleRad), y: cy + radius*Math.sin(angleRad)};
   }
 
-  let cumulative = 0, topRings = '', labels = '';
+  let cumulative = 0, sideWalls = '', topRings = '', labels = '';
   segments.forEach(seg=>{
     const pct = seg.count/total*100;
     if(pct>0){
       const startPct = cumulative;
       const endPct = Math.min(cumulative+pct, startPct+99.97);
-      const start = pointOnRing(startPct);
-      const end = pointOnRing(endPct);
       const largeArc = (endPct-startPct) > 50 ? 1 : 0;
+      const dark = `color-mix(in srgb, ${seg.color} 62%, black)`;
+
+      const oStart = pointAt(outerR, startPct), oEnd = pointAt(outerR, endPct);
+      const oStartB = {x:oStart.x, y:oStart.y+depth}, oEndB = {x:oEnd.x, y:oEnd.y+depth};
+      sideWalls += `<path d="M ${oStart.x.toFixed(2)} ${oStart.y.toFixed(2)} A ${outerR} ${outerR} 0 ${largeArc} 1 ${oEnd.x.toFixed(2)} ${oEnd.y.toFixed(2)} L ${oEndB.x.toFixed(2)} ${oEndB.y.toFixed(2)} A ${outerR} ${outerR} 0 ${largeArc} 0 ${oStartB.x.toFixed(2)} ${oStartB.y.toFixed(2)} Z" fill="${dark}"/>`;
+
+      const iStart = pointAt(innerR, startPct), iEnd = pointAt(innerR, endPct);
+      const iStartB = {x:iStart.x, y:iStart.y+depth}, iEndB = {x:iEnd.x, y:iEnd.y+depth};
+      sideWalls += `<path d="M ${iStart.x.toFixed(2)} ${iStart.y.toFixed(2)} A ${innerR} ${innerR} 0 ${largeArc} 1 ${iEnd.x.toFixed(2)} ${iEnd.y.toFixed(2)} L ${iEndB.x.toFixed(2)} ${iEndB.y.toFixed(2)} A ${innerR} ${innerR} 0 ${largeArc} 0 ${iStartB.x.toFixed(2)} ${iStartB.y.toFixed(2)} Z" fill="${dark}"/>`;
+
+      const start = pointAt(r, startPct), end = pointAt(r, endPct);
       const d = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(3)} ${end.y.toFixed(3)}`;
       topRings += `<path class="donut-slice" d="${d}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
-      const mid = pointOnRing(cumulative + pct/2);
+      const mid = pointAt(r, cumulative + pct/2);
       labels += `<text x="${mid.x.toFixed(2)}" y="${mid.y.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.5); stroke-width:3px; stroke-linejoin:round; pointer-events:none;">${seg.count}</text>`;
     }
     cumulative += pct;
   });
 
   const glossDash = circumference*0.4;
-  const gloss = `<circle cx="${cx}" cy="${cy}" r="${r-strokeW/2+3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3" stroke-dasharray="${glossDash.toFixed(2)} ${(circumference-glossDash).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" pointer-events="none"/>`;
+  const gloss = `<circle cx="${cx}" cy="${cy}" r="${innerR+3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3" stroke-dasharray="${glossDash.toFixed(2)} ${(circumference-glossDash).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" pointer-events="none"/>`;
 
-  return `<svg viewBox="0 0 100 110" style="width:150px; height:150px; overflow:hidden; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));">
+  return `<svg viewBox="0 0 100 115" style="width:150px; height:150px; overflow:visible; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));">
+    <g>${sideWalls}</g>
     <g>${topRings}</g>
     ${gloss}
     <g>${labels}</g>
