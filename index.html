@@ -1353,7 +1353,7 @@ function renderOptimize(){
 
   document.getElementById('facilityRate').textContent = rate + '%';
   document.getElementById('facilityBar').style.width = rate + '%';
-  document.getElementById('facilityQueue').textContent = criticalBasinCount + '개 지';
+  document.getElementById('facilityQueue').textContent = criticalBasinCount + '개 흡착지';
   document.getElementById('warehouseAlertCount').textContent = WAREHOUSES.filter(w=>w.stock<w.safety).length + '개소';
   document.getElementById('warehouseAlertSub').textContent = WAREHOUSES.filter(w=>w.stock<w.safety).map(w=>w.name).join(', ') || '없음';
 
