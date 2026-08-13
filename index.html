@@ -92,6 +92,8 @@ a{color:var(--accent); text-decoration:none;}
 .value-clickable{cursor:pointer; display:inline-flex; align-items:baseline; gap:6px; transition:opacity .15s ease, text-decoration-color .15s ease; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:4px;}
 .toggle-btn{background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; width:20px; height:20px; font-size:10px; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0;}
 .toggle-btn:hover{border-color:var(--accent); color:var(--accent);}
+.pie-stat{cursor:pointer; text-align:center; transition:opacity .15s ease;}
+.pie-stat:hover{opacity:.7;}
 
 .plant-chip{position:relative; display:inline-flex;}
 .plant-chip input{padding-right:14px;}
@@ -249,9 +251,8 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
     <!-- 전체 현황 -->
     <section class="view active" id="view-home">
       <div class="page-header"><h1>전체 현황</h1><p>낙동강수계 정수장·재생시설·비축창고 현황을 한눈에 확인합니다.</p></div>
-      <div id="homeSummary" class="grid grid-4"></div>
 
-      <div class="section-title">정수장별 지 상태 비율</div>
+      <div class="section-title" style="margin-top:0;">각 정수장 흡착지 상태 비율</div>
       <div class="grid grid-4" id="homePieCharts"></div>
 
       <div class="section-title">정수장별 상태</div>
@@ -934,20 +935,6 @@ function switchView(view){
 /* ===================== 전체 현황 ===================== */
 function renderHome(){
   const summaries = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)}));
-  const critical = summaries.filter(s=>s.summary.status==='임박').length;
-  const warn = summaries.filter(s=>s.summary.status==='주의').length;
-  const normal = summaries.filter(s=>s.summary.status==='정상').length;
-
-  document.getElementById('homeSummary').innerHTML = `
-    <div class="card stat-card"><div class="label">교체임박 정수장</div><div class="value value-clickable" style="color:var(--red-text)" data-category="critical">${critical}개소</div><div class="sub">전체 ${PLANTS.length}개소 중</div></div>
-    <div class="card stat-card"><div class="label">주의 정수장</div><div class="value value-clickable" style="color:var(--amber-text)" data-category="warn">${warn}개소</div><div class="sub">기준 근접 지표 존재</div></div>
-    <div class="card stat-card"><div class="label">정상 정수장</div><div class="value value-clickable" style="color:var(--green-text)" data-category="normal">${normal}개소</div><div class="sub">모든 지표 안전 범위</div></div>
-    <div class="card stat-card"><div class="label">안전재고 미달 창고</div><div class="value value-clickable" data-category="warehouseAlert">${WAREHOUSES.filter(w=>w.stock<w.safety).length}개소</div><div class="sub">전체 ${WAREHOUSES.length}개소 중</div></div>
-  `;
-
-  document.querySelectorAll('[data-category]').forEach(btn=>{
-    btn.addEventListener('click', ()=>openCategoryModal(btn.getAttribute('data-category')));
-  });
 
   document.getElementById('homePieCharts').innerHTML = summaries.map(({plant, summary})=>{
     const c = summary.basinEvals.filter(be=>be.ev.status==='임박').length;
@@ -961,18 +948,34 @@ function renderHome(){
       gradient = `conic-gradient(var(--red-text) 0% ${cPct}%, var(--amber-text) ${cPct}% ${cPct+wPct}%, var(--green-text) ${cPct+wPct}% 100%)`;
     }
     return `<div class="card" style="text-align:center;">
-      <div class="indicator-name" style="margin-bottom:14px;">${plant.name}</div>
-      <div style="position:relative; width:96px; height:96px; margin:0 auto;">
+      <div class="indicator-name">${plant.name} <span style="font-weight:400; color:var(--muted); font-size:12px;">(총 ${total}지)</span></div>
+      <div style="position:relative; width:96px; height:96px; margin:14px auto;">
         <div style="width:100%; height:100%; border-radius:50%; background:${gradient};"></div>
-        <div style="position:absolute; inset:16px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:var(--text-strong);">${total}지</div>
+        <div style="position:absolute; inset:16px; border-radius:50%; background:var(--card);"></div>
       </div>
-      <div style="display:flex; justify-content:center; gap:10px; margin-top:14px; font-size:11px; color:var(--muted); flex-wrap:wrap;">
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span class="dot" style="background:var(--red-text);"></span>임박 ${c}</span>
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span class="dot" style="background:var(--amber-text);"></span>주의 ${w}</span>
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span class="dot" style="background:var(--green-text);"></span>정상 ${n}</span>
+      <div style="display:flex; justify-content:center; gap:18px;">
+        <div class="pie-stat" data-plant-status="${plant.id}|임박" style="color:var(--red-text);">
+          <div style="font-size:20px; font-weight:800;">${c}</div>
+          <div style="font-size:10.5px; color:var(--muted); font-weight:500;">임박</div>
+        </div>
+        <div class="pie-stat" data-plant-status="${plant.id}|주의" style="color:var(--amber-text);">
+          <div style="font-size:20px; font-weight:800;">${w}</div>
+          <div style="font-size:10.5px; color:var(--muted); font-weight:500;">주의</div>
+        </div>
+        <div class="pie-stat" data-plant-status="${plant.id}|정상" style="color:var(--green-text);">
+          <div style="font-size:20px; font-weight:800;">${n}</div>
+          <div style="font-size:10.5px; color:var(--muted); font-weight:500;">정상</div>
+        </div>
       </div>
     </div>`;
   }).join('') || `<div class="card" style="color:var(--muted); font-size:13px;">등록된 정수장이 없습니다.</div>`;
+
+  document.querySelectorAll('[data-plant-status]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const [plantId, status] = el.getAttribute('data-plant-status').split('|');
+      openPlantBasinModal(plantId, status);
+    });
+  });
 
   const tableRows = [];
   summaries.forEach(({plant, summary})=>{
@@ -1265,48 +1268,29 @@ function openReport(){
   };
 }
 
-function openCategoryModal(type){
-  const CATEGORY_META = {
-    critical:{title:'교체임박 정수장', emptyMsg:'교체임박 정수장이 없습니다.'},
-    warn:{title:'주의 정수장', emptyMsg:'주의 정수장이 없습니다.'},
-    normal:{title:'정상 정수장', emptyMsg:'정상 정수장이 없습니다.'},
-    warehouseAlert:{title:'안전재고 미달 창고', emptyMsg:'안전재고 미달 창고가 없습니다.'},
-  };
-  const meta = CATEGORY_META[type];
-  document.getElementById('categoryModalTitle').textContent = meta.title;
+function openPlantBasinModal(plantId, status){
+  const plant = plantById(plantId);
+  if(!plant) return;
+  const summary = plantStatusSummary(plantId);
+  const matching = summary.basinEvals.filter(be=>be.ev.status===status);
+  const statusLabel = status==='임박' ? '교체임박' : status;
+
+  document.getElementById('categoryModalTitle').textContent = `${plant.name} · ${statusLabel} 흡착지`;
   const body = document.getElementById('categoryModalBody');
 
-  let itemsHtml = '';
-  if(type==='warehouseAlert'){
-    const items = WAREHOUSES.filter(w=>w.stock<w.safety);
-    itemsHtml = items.map(w=>`
-      <div class="priority-item">
-        <div class="priority-body">
-          <div class="priority-title">${w.name}</div>
-          <div class="priority-sub">현재재고 ${w.stock}톤 / 안전재고 ${w.safety}톤 · 부족 ${w.safety-w.stock}톤</div>
-        </div>
-      </div>`).join('');
-  } else {
-    const statusMap = {critical:'임박', warn:'주의', normal:'정상'};
-    const targetStatus = statusMap[type];
-    const items = PLANTS.filter(p=>plantStatusSummary(p.id).status===targetStatus);
-    itemsHtml = items.map(p=>{
-      const summary = plantStatusSummary(p.id);
-      const matching = summary.basinEvals.filter(be=>be.ev.status===targetStatus);
-      const basinNames = matching.map(be=>basinLabel(be.basin)).join(', ');
-      const firstBasinId = matching.length ? matching[0].basin.id : '';
-      return `
-      <div class="priority-item">
-        <div class="priority-body">
-          <div class="priority-title">${p.name}${basinNames ? ` (${basinNames})` : ''}</div>
-          <div class="priority-sub">${matching.length}개소</div>
-        </div>
-        <button class="btn-outline btn btn-sm" data-goto-modal="${p.id}" data-goto-modal-basin="${firstBasinId}">상세보기</button>
-      </div>`;
-    }).join('');
-  }
+  body.innerHTML = matching.length ? matching.map(be=>{
+    const reason = be.ev.exceededList.length ? be.ev.exceededList.map(r=>r.label).join(', ')
+      : be.ev.warnList.length ? be.ev.warnList.map(r=>r.label).join(', ') + ' (근접)' : '모든 지표 안전 범위';
+    return `
+    <div class="priority-item">
+      <div class="priority-body">
+        <div class="priority-title">${basinLabel(be.basin)}</div>
+        <div class="priority-sub">${reason}</div>
+      </div>
+      <button class="btn-outline btn btn-sm" data-goto-modal="${plant.id}" data-goto-modal-basin="${be.basin.id}">상세보기</button>
+    </div>`;
+  }).join('') : `<div style="color:var(--muted); font-size:13.5px;">해당 상태의 흡착지가 없습니다.</div>`;
 
-  body.innerHTML = itemsHtml || `<div style="color:var(--muted); font-size:13.5px;">${meta.emptyMsg}</div>`;
   document.getElementById('categoryModal').classList.add('show');
 
   document.querySelectorAll('[data-goto-modal]').forEach(btn=>{
