@@ -255,6 +255,10 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
           <label class="field-label">정수장 선택</label>
           <select id="plantSelect"></select>
         </div>
+        <div>
+          <label class="field-label">흡착지 선택</label>
+          <select id="basinSelect"></select>
+        </div>
         <div class="btn-row">
           <button class="btn" id="btnMakeReport">사전보고서 생성</button>
         </div>
@@ -375,6 +379,17 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
         </div>
       </div>
 
+      <div class="section-title">흡착지별 데이터</div>
+      <div class="card" style="margin-bottom:16px; display:flex; gap:14px; align-items:end; flex-wrap:wrap;">
+        <div>
+          <label class="field-label">정수장 선택</label>
+          <select id="adminBasinPlantSelect"></select>
+        </div>
+      </div>
+      <div class="card table-wrap" style="margin-bottom:20px;">
+        <table id="adminBasinTable"></table>
+      </div>
+
       <div class="section-title">재생시설</div>
       <div class="card" style="margin-bottom:20px; max-width:320px;">
         <div class="field" style="margin-bottom:0;">
@@ -459,10 +474,10 @@ const INDICATORS = [
 ];
 
 const DEFAULT_PLANTS = [
-  {id:'gumi', name:'구미정수장', gacTon:9,  operMonths:14, bv:28000, iodine:788.5, doc:1.46, dbpsPct:51.4, geosminMib:3.45},
-  {id:'goryeong', name:'고령정수장', gacTon:11, operMonths:22, bv:42000, iodine:611, doc:1.89, dbpsPct:69.4, geosminMib:9.2},
-  {id:'bansong', name:'반송정수장', gacTon:13, operMonths:30, bv:51000, iodine:539.1, doc:1.66, dbpsPct:52.4, geosminMib:4.44},
-  {id:'yeoncho', name:'연초정수장', gacTon:15, operMonths:34, bv:48000, iodine:615.2, doc:2.04, dbpsPct:78.3, geosminMib:10.49},
+  {id:'gumi', name:'구미정수장'},
+  {id:'goryeong', name:'고령정수장'},
+  {id:'bansong', name:'반송정수장'},
+  {id:'yeoncho', name:'연초정수장'},
 ];
 
 const DEFAULT_FACILITY = {capacityPerDay: 2.6};
@@ -471,25 +486,76 @@ const DEFAULT_WAREHOUSES = [
   {id:'W1', name:'구미 입상활성탄 비축창고', capacity:180, stock:90, safety:75, dailyOutflow:3.0},
 ];
 
+/* 흡착지(지) 고정 구성: 구미 18지(GAC12+F/A6), 고령 GAC5지, 반송 F/A10지, 연초 F/A4지 */
+const BASIN_STRUCTURE = {
+  gumi: [
+    ...Array.from({length:12}, (_,i)=>({carbonSpec:'GAC', basinNo:String(i+1)})),
+    ...Array.from({length:6}, (_,i)=>({carbonSpec:'F/A', basinNo:String(i+1)})),
+  ],
+  goryeong: Array.from({length:5}, (_,i)=>({carbonSpec:'GAC', basinNo:String(i+1)})),
+  bansong: Array.from({length:10}, (_,i)=>({carbonSpec:'F/A', basinNo:String(i+1)})),
+  yeoncho: Array.from({length:4}, (_,i)=>({carbonSpec:'F/A', basinNo:String(i+1)})),
+};
+
+function basinId(plantId, carbonSpec, basinNo){
+  return `${plantId}-${carbonSpec}-${basinNo}`.replace(/\s+/g,'_');
+}
+
+function flattenBasinStructure(){
+  const list = [];
+  Object.keys(BASIN_STRUCTURE).forEach(plantId=>{
+    BASIN_STRUCTURE[plantId].forEach(b=>list.push({plantId, carbonSpec:b.carbonSpec, basinNo:b.basinNo}));
+  });
+  return list;
+}
+
+const DEFAULT_BASIN_CYCLES = {
+  gacTon:[8,10,12,9,11],
+  operMonths:[10,22,30,15,26,34],
+  bv:[20000,40000,51000,15000,47000],
+  iodine:[850,720,880,610,560,940,505,770,690,830,470,900],
+  doc:[1.2,1.8,0.9,2.1,1.5],
+  dbpsPct:[45,70,30,85,60],
+  geosminMib:[3,8,2,11,5],
+};
+
+function buildDefaultBasins(){
+  const c = DEFAULT_BASIN_CYCLES;
+  return flattenBasinStructure().map((b,idx)=>({
+    id: basinId(b.plantId, b.carbonSpec, b.basinNo),
+    plantId:b.plantId, carbonSpec:b.carbonSpec, basinNo:b.basinNo,
+    gacTon: c.gacTon[idx % c.gacTon.length],
+    operMonths: c.operMonths[idx % c.operMonths.length],
+    bv: c.bv[idx % c.bv.length],
+    iodine: c.iodine[idx % c.iodine.length],
+    doc: c.doc[idx % c.doc.length],
+    dbpsPct: c.dbpsPct[idx % c.dbpsPct.length],
+    geosminMib: c.geosminMib[idx % c.geosminMib.length],
+  }));
+}
+const DEFAULT_BASINS = buildDefaultBasins();
+
 const SUPABASE_URL = 'https://ndcdxqqljnbwnwgqszwi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable__FQ1RVW68XSRozWOQez8Bg_Zf44FbNd';
 let sb;
 
-let PLANTS = [], FACILITY = {}, WAREHOUSES = [];
+let PLANTS = [], FACILITY = {}, WAREHOUSES = [], BASINS = [];
 
 function cloneDefaults(){
   PLANTS = DEFAULT_PLANTS.map(p=>Object.assign({}, p));
   FACILITY = Object.assign({}, DEFAULT_FACILITY);
   WAREHOUSES = DEFAULT_WAREHOUSES.map(w=>Object.assign({}, w));
+  BASINS = DEFAULT_BASINS.map(b=>Object.assign({}, b));
 }
 
 function randomBetween(min, max, decimals=1){
   return +(min + Math.random()*(max-min)).toFixed(decimals);
 }
 
-function randomizeDefaults(){
-  PLANTS = DEFAULT_PLANTS.map(p=>({
-    id:p.id, name:p.name,
+function randomizeBasins(){
+  return flattenBasinStructure().map(b=>({
+    id: basinId(b.plantId, b.carbonSpec, b.basinNo),
+    plantId:b.plantId, carbonSpec:b.carbonSpec, basinNo:b.basinNo,
     gacTon:Math.round(randomBetween(6,18,0)),
     operMonths:Math.round(randomBetween(3,40,0)),
     bv:Math.round(randomBetween(5000,55000,0)),
@@ -498,6 +564,10 @@ function randomizeDefaults(){
     dbpsPct:randomBetween(15,95,1),
     geosminMib:randomBetween(0.5,12,1),
   }));
+}
+
+function randomizeDefaults(){
+  PLANTS = DEFAULT_PLANTS.map(p=>({id:p.id, name:p.name}));
   FACILITY = {capacityPerDay:randomBetween(1.5,4,1)};
   WAREHOUSES = DEFAULT_WAREHOUSES.map(w=>{
     const capacity = Math.round(randomBetween(100,220,0));
@@ -505,13 +575,14 @@ function randomizeDefaults(){
     const stock = Math.round(randomBetween(10, capacity,0));
     return {id:w.id, name:w.name, capacity, stock, safety, dailyOutflow:randomBetween(1,4,1)};
   });
+  BASINS = randomizeBasins();
 }
 
 function rowToPlant(r){
-  return {id:r.id, name:r.name, gacTon:r.gac_ton, operMonths:r.oper_months, bv:r.bv, iodine:r.iodine, doc:r.doc, dbpsPct:r.dbps_pct, geosminMib:r.geosmin_mib};
+  return {id:r.id, name:r.name};
 }
 function plantToRow(p){
-  return {id:p.id, name:p.name, gac_ton:p.gacTon, oper_months:p.operMonths, bv:p.bv, iodine:p.iodine, doc:p.doc, dbps_pct:p.dbpsPct, geosmin_mib:p.geosminMib};
+  return {id:p.id, name:p.name};
 }
 function rowToWarehouse(r){
   return {id:r.id, name:r.name, capacity:r.capacity, stock:r.stock, safety:r.safety, dailyOutflow:r.daily_outflow};
@@ -519,19 +590,28 @@ function rowToWarehouse(r){
 function warehouseToRow(w){
   return {id:w.id, name:w.name, capacity:w.capacity, stock:w.stock, safety:w.safety, daily_outflow:w.dailyOutflow};
 }
+function rowToBasin(r){
+  return {id:r.id, plantId:r.plant_id, carbonSpec:r.carbon_spec, basinNo:r.basin_no, gacTon:r.gac_ton, operMonths:r.oper_months, bv:r.bv, iodine:r.iodine, doc:r.doc, dbpsPct:r.dbps_pct, geosminMib:r.geosmin_mib};
+}
+function basinToRow(b){
+  return {id:b.id, plant_id:b.plantId, carbon_spec:b.carbonSpec, basin_no:b.basinNo, gac_ton:b.gacTon, oper_months:b.operMonths, bv:b.bv, iodine:b.iodine, doc:b.doc, dbps_pct:b.dbpsPct, geosmin_mib:b.geosminMib};
+}
 
 async function loadDataFromSupabase(){
-  const [plantsRes, warehousesRes, facilityRes] = await Promise.all([
+  const [plantsRes, warehousesRes, facilityRes, basinsRes] = await Promise.all([
     sb.from('plants').select('*'),
     sb.from('warehouses').select('*'),
     sb.from('facility').select('*').eq('id', 1).maybeSingle(),
+    sb.from('basins').select('*'),
   ]);
   if(plantsRes.error) throw plantsRes.error;
   if(warehousesRes.error) throw warehousesRes.error;
   if(facilityRes.error) throw facilityRes.error;
+  if(basinsRes.error) throw basinsRes.error;
   PLANTS = plantsRes.data.map(rowToPlant);
   WAREHOUSES = warehousesRes.data.map(rowToWarehouse);
   FACILITY = facilityRes.data ? {capacityPerDay: facilityRes.data.capacity_per_day} : Object.assign({}, DEFAULT_FACILITY);
+  BASINS = basinsRes.data.map(rowToBasin);
 }
 
 async function syncTableToSupabase(table, localArray, toRow){
@@ -554,6 +634,7 @@ async function saveData(){
   await Promise.all([
     syncTableToSupabase('plants', PLANTS, plantToRow),
     syncTableToSupabase('warehouses', WAREHOUSES, warehouseToRow),
+    syncTableToSupabase('basins', BASINS, basinToRow),
     sb.from('facility').upsert([{id:1, capacity_per_day: FACILITY.capacityPerDay}]),
   ]);
 }
@@ -597,6 +678,7 @@ function subscribeRealtime(){
     .on('postgres_changes', {event:'*', schema:'public', table:'plants'}, handleRealtimeChange)
     .on('postgres_changes', {event:'*', schema:'public', table:'warehouses'}, handleRealtimeChange)
     .on('postgres_changes', {event:'*', schema:'public', table:'facility'}, handleRealtimeChange)
+    .on('postgres_changes', {event:'*', schema:'public', table:'basins'}, handleRealtimeChange)
     .subscribe();
 }
 
@@ -673,7 +755,7 @@ const KB = [
 ];
 
 /* ===================== 상태 ===================== */
-let state = {view:'home', plantId:'gumi'};
+let state = {view:'home', plantId:'gumi', basinId:null, adminBasinPlantId:null};
 
 const ADMIN_PASSWORD = 'tkdjqcj12'; // 관리자 탭 접근 비밀번호 - 필요하면 이 값만 바꾸면 됩니다.
 let adminUnlocked = false;
@@ -790,6 +872,21 @@ function trendChart(data, opts={}){
 
 function plantById(id){ return PLANTS.find(p=>p.id===id); }
 
+function basinsOfPlant(plantId){
+  return BASINS.filter(b=>b.plantId===plantId)
+    .sort((a,b)=> a.carbonSpec.localeCompare(b.carbonSpec) || String(a.basinNo).localeCompare(String(b.basinNo), 'ko', {numeric:true}));
+}
+function basinLabel(b){ return `${b.carbonSpec} ${b.basinNo}지`; }
+function basinById(id){ return BASINS.find(b=>b.id===id); }
+
+function plantStatusSummary(plantId){
+  const evals = basinsOfPlant(plantId).map(b=>({basin:b, ev:evalPlant(b)}));
+  let status = '정상';
+  if(evals.some(e=>e.ev.status==='임박')) status='임박';
+  else if(evals.some(e=>e.ev.status==='주의')) status='주의';
+  return {status, basinEvals:evals};
+}
+
 /* ===================== 네비게이션 ===================== */
 function renderNav(){
   const sideNav = document.getElementById('sideNav');
@@ -820,11 +917,10 @@ function switchView(view){
 
 /* ===================== 전체 현황 ===================== */
 function renderHome(){
-  const evals = PLANTS.map(p=>({plant:p, ev:evalPlant(p)}));
-  const critical = evals.filter(e=>e.ev.status==='임박').length;
-  const warn = evals.filter(e=>e.ev.status==='주의').length;
-  const normal = evals.filter(e=>e.ev.status==='정상').length;
-  const rate = Math.min(100, Math.round((critical*10 + warn*6) / FACILITY.capacityPerDay / 4 * 10));
+  const summaries = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)}));
+  const critical = summaries.filter(s=>s.summary.status==='임박').length;
+  const warn = summaries.filter(s=>s.summary.status==='주의').length;
+  const normal = summaries.filter(s=>s.summary.status==='정상').length;
 
   document.getElementById('homeSummary').innerHTML = `
     <div class="card stat-card"><div class="label">교체임박 정수장</div><div class="value value-clickable" style="color:var(--red-text)" data-category="critical">${critical}개소</div><div class="sub">전체 ${PLANTS.length}개소 중</div></div>
@@ -837,28 +933,38 @@ function renderHome(){
     btn.addEventListener('click', ()=>openCategoryModal(btn.getAttribute('data-category')));
   });
 
-  const rows = evals.map(({plant,ev})=>{
-    const reason = ev.exceededList.length ? ev.exceededList.map(r=>r.label).join(', ')
-      : ev.warnList.length ? ev.warnList.map(r=>r.label).join(', ') + ' (근접)' : '-';
-    return `<tr>
-      <td><strong>${plant.name}</strong></td>
-      <td>${badgeHtml(ev.status)}</td>
-      <td>${plant.operMonths}개월</td>
-      <td>${fmt(currentValue(plant, INDICATORS[0]))} mg/g</td>
-      <td>${fmt(currentValue(plant, INDICATORS[1]))} mg/L</td>
-      <td style="white-space:normal; min-width:160px;">${reason}</td>
-      <td><button class="btn-outline btn btn-sm" data-goto="${plant.id}">상세보기</button></td>
-    </tr>`;
-  }).join('');
+  const tableRows = [];
+  summaries.forEach(({plant, summary})=>{
+    const flagged = summary.basinEvals.filter(be=>be.ev.status!=='정상')
+      .sort((a,b)=>{
+        const w = s=>s==='임박'?2:1;
+        return w(b.ev.status)-w(a.ev.status);
+      });
+    flagged.forEach((be,i)=>{
+      const reason = be.ev.exceededList.length ? be.ev.exceededList.map(r=>r.label).join(', ')
+        : be.ev.warnList.length ? be.ev.warnList.map(r=>r.label).join(', ') + ' (근접)' : '-';
+      tableRows.push(`<tr>
+        ${i===0 ? `<td rowspan="${flagged.length}"><strong>${plant.name}</strong></td>` : ''}
+        <td>${basinLabel(be.basin)}</td>
+        <td>${badgeHtml(be.ev.status)}</td>
+        <td>${be.basin.operMonths}개월</td>
+        <td>${fmt(currentValue(be.basin, INDICATORS[0]))} mg/g</td>
+        <td>${fmt(currentValue(be.basin, INDICATORS[1]))} mg/L</td>
+        <td style="white-space:normal; min-width:160px;">${reason}</td>
+        <td><button class="btn-outline btn btn-sm" data-goto="${plant.id}" data-goto-basin="${be.basin.id}">상세보기</button></td>
+      </tr>`);
+    });
+  });
 
   document.getElementById('plantTable').innerHTML = `
-    <thead><tr><th>정수장</th><th>상태</th><th>운영기간</th><th>요오드가</th><th>DOC</th><th>기준 초과/근접 항목</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
+    <thead><tr><th>정수장</th><th>지</th><th>상태</th><th>운영기간</th><th>요오드가</th><th>DOC</th><th>기준 초과/근접 항목</th><th></th></tr></thead>
+    <tbody>${tableRows.join('') || `<tr><td colspan="8" style="color:var(--muted);">교체임박·주의 상태인 흡착지가 없습니다.</td></tr>`}</tbody>
   `;
 
   document.querySelectorAll('[data-goto]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       state.plantId = btn.getAttribute('data-goto');
+      state.basinId = btn.getAttribute('data-goto-basin') || null;
       switchView('predict');
     });
   });
@@ -867,8 +973,10 @@ function renderHome(){
 /* ===================== 정수장별 예측 ===================== */
 function renderPredict(){
   const sel = document.getElementById('plantSelect');
+  const basinSel = document.getElementById('basinSelect');
   if(!PLANTS.length){
     sel.innerHTML = '';
+    basinSel.innerHTML = '';
     document.getElementById('predictBadge').innerHTML = '';
     document.getElementById('predictSummaryText').textContent = '등록된 정수장이 없습니다. 관리자 화면에서 정수장을 추가해주세요.';
     document.getElementById('predictBasicInfo').innerHTML = '';
@@ -879,14 +987,43 @@ function renderPredict(){
   }
   if(!plantById(state.plantId)) state.plantId = PLANTS[0].id;
   sel.innerHTML = PLANTS.map(p=>`<option value="${p.id}" ${p.id===state.plantId?'selected':''}>${p.name}</option>`).join('');
-  sel.onchange = ()=>{ state.plantId = sel.value; renderPredictDetail(); };
+  sel.onchange = ()=>{ state.plantId = sel.value; state.basinId = null; populatePredictBasinSelect(); };
+  populatePredictBasinSelect();
+}
+
+function populatePredictBasinSelect(){
+  const basinSel = document.getElementById('basinSelect');
+  const basins = basinsOfPlant(state.plantId);
+  if(!basins.length){
+    basinSel.innerHTML = '<option value="">지 데이터 없음</option>';
+    basinSel.disabled = true;
+    state.basinId = null;
+    renderPredictDetail();
+    return;
+  }
+  basinSel.disabled = false;
+  if(!basins.some(b=>b.id===state.basinId)) state.basinId = basins[0].id;
+  basinSel.innerHTML = basins.map(b=>`<option value="${b.id}" ${b.id===state.basinId?'selected':''}>${basinLabel(b)}</option>`).join('');
+  basinSel.onchange = ()=>{ state.basinId = basinSel.value; renderPredictDetail(); };
   renderPredictDetail();
 }
 
 function renderPredictDetail(){
   const plant = plantById(state.plantId);
   if(!plant) return;
-  const ev = evalPlant(plant);
+  const basin = basinById(state.basinId);
+
+  if(!basin){
+    document.getElementById('predictBadge').innerHTML = '';
+    document.getElementById('predictSummaryText').textContent = '이 정수장에는 등록된 흡착지가 없습니다.';
+    document.getElementById('predictBasicInfo').innerHTML = '';
+    document.getElementById('predictCharts').innerHTML = '';
+    document.getElementById('predictGauges').innerHTML = '';
+    renderPredictEnvCharts(plant.id);
+    return;
+  }
+
+  const ev = evalPlant(basin);
 
   document.getElementById('predictBadge').innerHTML = badgeHtml(ev.status);
 
@@ -901,14 +1038,16 @@ function renderPredictDetail(){
   document.getElementById('predictSummaryText').textContent = summary;
 
   document.getElementById('predictBasicInfo').innerHTML = `
-    활성탄 물량: ${plant.gacTon} 톤<br>
-    운영기간: ${plant.operMonths}개월<br>
-    통과 Bed Volume: ${plant.bv.toLocaleString('ko-KR')}
+    정수장: ${plant.name}<br>
+    흡착지: ${basinLabel(basin)}<br>
+    활성탄 물량: ${basin.gacTon} 톤<br>
+    운영기간: ${basin.operMonths}개월<br>
+    통과 Bed Volume: ${basin.bv.toLocaleString('ko-KR')}
   `;
 
   const chartInds = INDICATORS.filter(i=>i.key!=='operMonths' && i.key!=='bv');
   document.getElementById('predictCharts').innerHTML = chartInds.map(ind=>{
-    const hist = trendSeries(plant, ind);
+    const hist = trendSeries(basin, ind);
     const r = ev.results.find(x=>x.key===ind.key);
     const statusClass = r.exceeded ? 'badge-critical' : (r.warn ? 'badge-warn' : 'badge-normal');
     return `<div class="card">
@@ -1001,7 +1140,7 @@ async function renderPredictEnvCharts(plantId){
 }
 
 /* ===================== 사전보고서 ===================== */
-function buildReportHtml(plant, ev){
+function buildReportHtml(plant, basin, ev){
   const rows = ev.results.map(r=>{
     const state = r.exceeded ? '기준 초과' : (r.warn ? '근접' : '정상');
     return `<div class="report-row"><span>${r.label}</span><span>${fmt(r.value)} ${r.unit} / 기준 ${r.trigger.toLocaleString('ko-KR')} ${r.unit} — <strong>${state}</strong></span></div>`;
@@ -1011,8 +1150,9 @@ function buildReportHtml(plant, ev){
     : '현재 별도 조치가 필요하지 않으며, 정기 점검 일정을 유지합니다.';
   return `
     <div class="report-row"><span>정수장</span><span><strong>${plant.name}</strong></span></div>
+    <div class="report-row"><span>흡착지</span><span><strong>${basinLabel(basin)}</strong></span></div>
     <div class="report-row"><span>종합 판정</span><span>${badgeHtml(ev.status)}</span></div>
-    <div class="report-row"><span>활성탄 물량</span><span>${plant.gacTon} 톤</span></div>
+    <div class="report-row"><span>활성탄 물량</span><span>${basin.gacTon} 톤</span></div>
     <div style="margin:14px 0 6px 0; font-weight:700; font-size:13.5px;">지표별 상세</div>
     ${rows}
     <div style="margin:14px 0 6px 0; font-weight:700; font-size:13.5px;">권장 조치</div>
@@ -1021,12 +1161,13 @@ function buildReportHtml(plant, ev){
   `;
 }
 
-function buildReportText(plant, ev){
+function buildReportText(plant, basin, ev){
   const lines = [];
   lines.push(`활성탄 교체 사전보고서`);
   lines.push(`정수장: ${plant.name}`);
+  lines.push(`흡착지: ${basinLabel(basin)}`);
   lines.push(`종합 판정: ${ev.status}`);
-  lines.push(`활성탄 물량: ${plant.gacTon} 톤`);
+  lines.push(`활성탄 물량: ${basin.gacTon} 톤`);
   lines.push('');
   lines.push('[지표별 상세]');
   ev.results.forEach(r=>{
@@ -1047,16 +1188,18 @@ function buildReportText(plant, ev){
 function openReport(){
   const plant = plantById(state.plantId);
   if(!plant){ alert('등록된 정수장이 없습니다. 관리자 화면에서 정수장을 추가해주세요.'); return; }
-  const ev = evalPlant(plant);
-  document.getElementById('reportBody').innerHTML = buildReportHtml(plant, ev);
+  const basin = basinById(state.basinId);
+  if(!basin){ alert('선택된 흡착지가 없습니다. 흡착지를 먼저 선택해주세요.'); return; }
+  const ev = evalPlant(basin);
+  document.getElementById('reportBody').innerHTML = buildReportHtml(plant, basin, ev);
   document.getElementById('reportModal').classList.add('show');
   document.getElementById('btnDownloadReport').onclick = ()=>{
-    const text = buildReportText(plant, ev);
+    const text = buildReportText(plant, basin, ev);
     const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `사전보고서_${plant.name}.txt`;
+    a.download = `사전보고서_${plant.name}_${basinLabel(basin)}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1087,17 +1230,20 @@ function openCategoryModal(type){
       </div>`).join('');
   } else {
     const statusMap = {critical:'임박', warn:'주의', normal:'정상'};
-    const items = PLANTS.filter(p=>evalPlant(p).status===statusMap[type]);
+    const targetStatus = statusMap[type];
+    const items = PLANTS.filter(p=>plantStatusSummary(p.id).status===targetStatus);
     itemsHtml = items.map(p=>{
-      const ev = evalPlant(p);
-      const reason = (ev.exceededList.length?ev.exceededList:ev.warnList).map(r=>r.label).join(', ') || '해당 없음';
+      const summary = plantStatusSummary(p.id);
+      const matching = summary.basinEvals.filter(be=>be.ev.status===targetStatus);
+      const basinNames = matching.map(be=>basinLabel(be.basin)).join(', ');
+      const firstBasinId = matching.length ? matching[0].basin.id : '';
       return `
       <div class="priority-item">
         <div class="priority-body">
-          <div class="priority-title">${p.name}</div>
-          <div class="priority-sub">${reason}</div>
+          <div class="priority-title">${p.name}${basinNames ? ` (${basinNames})` : ''}</div>
+          <div class="priority-sub">${matching.length}개소</div>
         </div>
-        <button class="btn-outline btn btn-sm" data-goto-modal="${p.id}">상세보기</button>
+        <button class="btn-outline btn btn-sm" data-goto-modal="${p.id}" data-goto-modal-basin="${firstBasinId}">상세보기</button>
       </div>`;
     }).join('');
   }
@@ -1108,6 +1254,7 @@ function openCategoryModal(type){
   document.querySelectorAll('[data-goto-modal]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       state.plantId = btn.getAttribute('data-goto-modal');
+      state.basinId = btn.getAttribute('data-goto-modal-basin') || null;
       document.getElementById('categoryModal').classList.remove('show');
       switchView('predict');
     });
@@ -1116,32 +1263,34 @@ function openCategoryModal(type){
 
 /* ===================== 재생·공급 최적화 ===================== */
 function renderOptimize(){
-  const evals = PLANTS.map(p=>({plant:p, ev:evalPlant(p)}));
-  const needsRegen = evals.filter(e=>e.ev.status!=='정상');
-  const queueTon = needsRegen.reduce((sum,e)=>sum+e.plant.gacTon,0);
-  const rate = Math.min(100, Math.round(queueTon / (FACILITY.capacityPerDay*14) * 100));
+  const summaries = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)}));
+  const criticalPlants = summaries.filter(s=>s.summary.status==='임박');
+  const criticalBasinCount = criticalPlants.reduce((sum,s)=>sum+s.summary.basinEvals.filter(be=>be.ev.status==='임박').length, 0);
+  const rate = BASINS.length ? Math.min(100, Math.round(criticalBasinCount / BASINS.length * 100)) : 0;
 
   document.getElementById('facilityRate').textContent = rate + '%';
   document.getElementById('facilityBar').style.width = rate + '%';
-  document.getElementById('facilityQueue').textContent = queueTon + ' 톤';
+  document.getElementById('facilityQueue').textContent = criticalBasinCount + '개 지';
   document.getElementById('warehouseAlertCount').textContent = WAREHOUSES.filter(w=>w.stock<w.safety).length + '개소';
   document.getElementById('warehouseAlertSub').textContent = WAREHOUSES.filter(w=>w.stock<w.safety).map(w=>w.name).join(', ') || '없음';
 
-  const ranked = needsRegen.slice().sort((a,b)=>{
-    const weight = s=>s==='임박'?2:1;
-    if(weight(b.ev.status)!==weight(a.ev.status)) return weight(b.ev.status)-weight(a.ev.status);
-    return b.ev.exceededList.length - a.ev.exceededList.length;
-  });
+  const ranked = criticalPlants.slice().sort((a,b)=>
+    b.summary.basinEvals.filter(be=>be.ev.status==='임박').length - a.summary.basinEvals.filter(be=>be.ev.status==='임박').length
+  );
 
-  document.getElementById('plantPriorityList').innerHTML = ranked.length ? ranked.map((e,i)=>`
-    <div class="priority-item">
+  document.getElementById('plantPriorityList').innerHTML = ranked.length ? ranked.map((s,i)=>{
+    const criticalBasins = s.summary.basinEvals.filter(be=>be.ev.status==='임박');
+    const detailLines = criticalBasins.map(be=>
+      `${basinLabel(be.basin)}: 필요 재생량 ${be.basin.gacTon}톤 · 사유: ${be.ev.exceededList.map(r=>r.label).join(', ')}`
+    ).join('<br>');
+    return `<div class="priority-item">
       <div class="priority-rank">${i+1}</div>
       <div class="priority-body">
-        <div class="priority-title">${e.plant.name} ${badgeHtml(e.ev.status)}</div>
-        <div class="priority-sub">필요 재생량 ${e.plant.gacTon}톤 · 사유: ${(e.ev.exceededList.length?e.ev.exceededList:e.ev.warnList).map(r=>r.label).join(', ')}</div>
+        <div class="priority-title">${s.plant.name} ${badgeHtml('임박')}</div>
+        <div class="priority-sub" style="font-size:11.5px; line-height:1.7; margin-top:5px;">${detailLines}</div>
       </div>
-    </div>
-  `).join('') : `<div style="color:var(--muted); font-size:13px;">현재 재생이 필요한 정수장이 없습니다.</div>`;
+    </div>`;
+  }).join('') : `<div style="color:var(--muted); font-size:13px;">현재 재생이 필요한(교체임박) 정수장이 없습니다.</div>`;
 
   const whRanked = WAREHOUSES.slice().sort((a,b)=>(b.safety-b.stock)-(a.safety-a.stock));
   document.getElementById('warehousePriorityList').innerHTML = whRanked.map((w,i)=>{
@@ -1192,13 +1341,15 @@ function runSimulation(){
     return a.depletionDay-b.depletionDay;
   })[0];
 
-  const evals = PLANTS.map(p=>({plant:p, ev:evalPlant(p)})).filter(e=>e.ev.status!=='정상')
-    .sort((a,b)=>(b.ev.status==='임박'?2:1)-(a.ev.status==='임박'?2:1))[0];
+  const topCritical = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)})).filter(s=>s.summary.status==='임박')
+    .sort((a,b)=>
+      b.summary.basinEvals.filter(be=>be.ev.status==='임박').length - a.summary.basinEvals.filter(be=>be.ev.status==='임박').length
+    )[0];
 
   let recommendation;
   if(worst && worst.depletionDay!==null){
     recommendation = `${worst.warehouse.name}는 시뮬레이션 기준 D+${worst.depletionDay}일에 안전재고 이하로 떨어질 것으로 예상됩니다. 재생시설 처리 물량을 ${worst.warehouse.name}에 우선 배정하세요.`;
-    if(evals) recommendation += ` 재생 우선순위 1위인 ${evals.plant.name}의 활성탄 재생을 앞당기는 것을 권장합니다.`;
+    if(topCritical) recommendation += ` 재생 우선순위 1위인 ${topCritical.plant.name}의 활성탄 재생을 앞당기는 것을 권장합니다.`;
   } else {
     recommendation = `설정한 조건에서는 시뮬레이션 기간(${period}일) 내 안전재고 이하로 떨어지는 창고가 없습니다.`;
   }
@@ -1228,26 +1379,23 @@ function renderAdmin(){
   document.getElementById('adminFacilityCapacity').value = FACILITY.capacityPerDay;
 
   document.getElementById('adminPlantTable').innerHTML = `
-    <thead><tr>
-      <th>정수장명</th><th>활성탄(톤)</th><th>운영기간(개월)</th><th>BV</th>
-      <th>요오드가(mg/g)</th><th>DOC(mg/L)</th><th>DBPs(%)</th><th>Geosmin&MIB(ng/L)</th><th></th>
-    </tr></thead>
+    <thead><tr><th>정수장명</th><th></th></tr></thead>
     <tbody>
       ${PLANTS.map(p=>`
         <tr data-plant-row="${p.id}">
-          <td><input type="text" data-field="name" value="${escapeAttr(p.name)}" style="width:110px;"></td>
-          <td><input type="number" data-field="gacTon" value="${p.gacTon}" style="width:70px;"></td>
-          <td><input type="number" data-field="operMonths" value="${p.operMonths}" style="width:80px;"></td>
-          <td><input type="number" data-field="bv" value="${p.bv}" style="width:90px;"></td>
-          <td><input type="number" data-field="iodine" value="${p.iodine}" step="0.1" style="width:85px;"></td>
-          <td><input type="number" data-field="doc" value="${p.doc}" step="0.01" style="width:75px;"></td>
-          <td><input type="number" data-field="dbpsPct" value="${p.dbpsPct}" step="0.1" style="width:75px;"></td>
-          <td><input type="number" data-field="geosminMib" value="${p.geosminMib}" step="0.1" style="width:75px;"></td>
+          <td><input type="text" data-field="name" value="${escapeAttr(p.name)}" style="width:160px;"></td>
           <td><button class="btn-outline btn btn-sm" data-del-plant="${p.id}">삭제</button></td>
         </tr>
-      `).join('') || `<tr><td colspan="9" style="color:var(--muted);">등록된 정수장이 없습니다.</td></tr>`}
+      `).join('') || `<tr><td colspan="2" style="color:var(--muted);">등록된 정수장이 없습니다.</td></tr>`}
     </tbody>
   `;
+
+  const adminBasinPlantSelect = document.getElementById('adminBasinPlantSelect');
+  adminBasinPlantSelect.innerHTML = PLANTS.map(p=>`<option value="${p.id}" ${p.id===(state.adminBasinPlantId||PLANTS[0]?.id)?'selected':''}>${p.name}</option>`).join('');
+  if(!PLANTS.some(p=>p.id===state.adminBasinPlantId)) state.adminBasinPlantId = PLANTS[0] ? PLANTS[0].id : null;
+  adminBasinPlantSelect.value = state.adminBasinPlantId || '';
+  adminBasinPlantSelect.onchange = ()=>{ state.adminBasinPlantId = adminBasinPlantSelect.value; renderAdminBasinTable(); };
+  renderAdminBasinTable();
 
   document.getElementById('adminWarehouseTable').innerHTML = `
     <thead><tr>
@@ -1310,8 +1458,43 @@ function renderAdmin(){
   };
 }
 
+function renderAdminBasinTable(){
+  const plantId = state.adminBasinPlantId;
+  const basins = basinsOfPlant(plantId);
+  document.getElementById('adminBasinTable').innerHTML = `
+    <thead><tr>
+      <th>흡착지</th><th>활성탄(톤)</th><th>운영기간(개월)</th><th>BV</th>
+      <th>요오드가(mg/g)</th><th>DOC(mg/L)</th><th>DBPs(%)</th><th>Geosmin&MIB(ng/L)</th>
+    </tr></thead>
+    <tbody>
+      ${basins.map(b=>`
+        <tr data-basin-row="${b.id}">
+          <td><strong>${basinLabel(b)}</strong></td>
+          <td><input type="number" data-field="gacTon" value="${b.gacTon}" style="width:70px;"></td>
+          <td><input type="number" data-field="operMonths" value="${b.operMonths}" style="width:80px;"></td>
+          <td><input type="number" data-field="bv" value="${b.bv}" style="width:90px;"></td>
+          <td><input type="number" data-field="iodine" value="${b.iodine}" step="0.1" style="width:85px;"></td>
+          <td><input type="number" data-field="doc" value="${b.doc}" step="0.01" style="width:75px;"></td>
+          <td><input type="number" data-field="dbpsPct" value="${b.dbpsPct}" step="0.1" style="width:75px;"></td>
+          <td><input type="number" data-field="geosminMib" value="${b.geosminMib}" step="0.1" style="width:75px;"></td>
+        </tr>
+      `).join('') || `<tr><td colspan="8" style="color:var(--muted);">이 정수장에는 등록된 흡착지가 없습니다.</td></tr>`}
+    </tbody>
+  `;
+
+  document.querySelectorAll('#adminBasinTable input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const id = inp.closest('tr').getAttribute('data-basin-row');
+      const field = inp.getAttribute('data-field');
+      const basin = basinById(id);
+      if(!basin) return;
+      basin[field] = parseFloat(inp.value) || 0;
+    });
+  });
+}
+
 document.getElementById('btnAdminAddPlant').addEventListener('click', ()=>{
-  PLANTS.push({id:newId('plant'), name:'새 정수장', gacTon:10, operMonths:0, bv:0, iodine:850, doc:0.5, dbpsPct:20, geosminMib:1});
+  PLANTS.push({id:newId('plant'), name:'새 정수장'});
   renderAdmin();
 });
 document.getElementById('btnAdminAddWarehouse').addEventListener('click', ()=>{
@@ -1355,16 +1538,17 @@ function answerQuestion(q){
   const lower = q.toLowerCase();
   if((lower.includes('왜')||lower.includes('사유')||lower.includes('이유')) && (lower.includes('임박')||lower.includes('주의')||lower.includes('상태')||lower.includes('선택'))){
     const plant = plantById(state.plantId);
-    if(!plant){
-      addBotMessage('현재 등록된 정수장이 없습니다. 관리자 화면에서 정수장을 추가해주세요.');
+    const basin = basinById(state.basinId);
+    if(!plant || !basin){
+      addBotMessage('현재 선택된 정수장·흡착지가 없습니다. "정수장별 예측" 화면에서 정수장과 흡착지를 선택해주세요.');
       return;
     }
-    const ev = evalPlant(plant);
+    const ev = evalPlant(basin);
     if(ev.status==='정상'){
-      addBotMessage(`현재 선택된 정수장은 "${plant.name}"이고, 상태는 정상입니다. 모든 지표가 낙동강수계 재생 기준 대비 안전 범위에 있습니다.`);
+      addBotMessage(`현재 선택된 흡착지는 "${plant.name} ${basinLabel(basin)}"이고, 상태는 정상입니다. 모든 지표가 낙동강수계 재생 기준 대비 안전 범위에 있습니다.`);
     } else {
       const list = (ev.exceededList.length?ev.exceededList:ev.warnList).map(r=>`${r.label}(${fmt(r.value)}${r.unit}, 기준 ${r.trigger}${r.unit})`).join(', ');
-      addBotMessage(`현재 선택된 정수장은 "${plant.name}"이고, 상태는 ${ev.status}입니다. 관련 지표: ${list}`, 'K-water연구원(2012), 낙동강수계 기준');
+      addBotMessage(`현재 선택된 흡착지는 "${plant.name} ${basinLabel(basin)}"이고, 상태는 ${ev.status}입니다. 관련 지표: ${list}`, 'K-water연구원(2012), 낙동강수계 기준');
     }
     return;
   }
