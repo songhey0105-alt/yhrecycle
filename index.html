@@ -960,12 +960,12 @@ function renderHome(){
         : be.ev.warnList.length ? be.ev.warnList.map(r=>r.label).join(', ') + ' (근접)' : '-';
       const isExtra = i>0;
       tableRows.push(`<tr ${isExtra && !isExpanded ? 'style="display:none;"' : ''} data-plant-group="${plant.id}">
-        ${i===0 ? `<td rowspan="${flagged.length}">
+        <td>
           <div style="display:flex; align-items:center; gap:6px;">
             <strong>${plant.name}</strong>
-            ${flagged.length>1 ? `<button class="toggle-btn" data-toggle-home-plant="${plant.id}">${isExpanded?'▲':'▼'}</button>` : ''}
+            ${i===0 && flagged.length>1 ? `<button class="toggle-btn" data-toggle-home-plant="${plant.id}">${isExpanded?'▲':'▼'}</button>` : ''}
           </div>
-        </td>` : ''}
+        </td>
         <td>${basinLabel(be.basin)}</td>
         <td>${badgeHtml(be.ev.status)}</td>
         <td>${be.basin.operMonths}개월</td>
