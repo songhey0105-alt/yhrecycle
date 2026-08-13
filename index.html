@@ -94,8 +94,8 @@ a{color:var(--accent); text-decoration:none;}
 .toggle-btn:hover{border-color:var(--accent); color:var(--accent);}
 .legend-item{cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--muted); transition:color .15s ease;}
 .legend-item:hover{color:var(--text-strong);}
-.donut-slice{transition:filter .18s ease;}
-.donut-slice:hover{filter:brightness(1.25);}
+.donut-slice{transition:stroke-width .18s ease, filter .18s ease;}
+.donut-slice:hover{stroke-width:22; filter:brightness(1.3);}
 
 .plant-chip{position:relative; display:inline-flex;}
 .plant-chip input{padding-right:14px;}
@@ -937,48 +937,46 @@ function switchView(view){
 /* ===================== 전체 현황 ===================== */
 function donutChartSvg(plantId, c, w, n){
   const total = c+w+n;
-  const cx=50, cy=42, r=26, depth=8, explode=5;
+  const cx=50, cy=48, r=32, strokeW=17;
+  const circumference = 2*Math.PI*r;
   const segments = [
     {key:'임박', count:c, color:'var(--red-text)'},
     {key:'주의', count:w, color:'var(--amber-text)'},
     {key:'정상', count:n, color:'var(--green-text)'},
   ];
   if(total===0){
-    return `<svg viewBox="0 0 100 105" style="width:150px; height:150px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="17"/></svg>`;
+    return `<svg viewBox="0 0 100 110" style="width:150px; height:150px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
   }
 
-  function angleOf(pct){ return (pct/100*360 - 90) * Math.PI/180; }
+  function pointOnRing(pct){
+    const angleDeg = pct/100*360 - 90;
+    const angleRad = angleDeg*Math.PI/180;
+    return {x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad)};
+  }
 
-  let cumulative = 0, sides = '', tops = '', labels = '';
+  let cumulative = 0, topRings = '', labels = '';
   segments.forEach(seg=>{
     const pct = seg.count/total*100;
     if(pct>0){
       const startPct = cumulative;
       const endPct = Math.min(cumulative+pct, startPct+99.97);
-      const startAngle = angleOf(startPct);
-      const endAngle = angleOf(endPct);
-      const midAngle = angleOf(cumulative + pct/2);
+      const start = pointOnRing(startPct);
+      const end = pointOnRing(endPct);
       const largeArc = (endPct-startPct) > 50 ? 1 : 0;
-      const ex = Math.cos(midAngle)*explode, ey = Math.sin(midAngle)*explode;
-      const scx = cx+ex, scy = cy+ey;
-      const p1 = {x: scx + r*Math.cos(startAngle), y: scy + r*Math.sin(startAngle)};
-      const p2 = {x: scx + r*Math.cos(endAngle), y: scy + r*Math.sin(endAngle)};
-      const p1b = {x: p1.x, y: p1.y+depth};
-      const p2b = {x: p2.x, y: p2.y+depth};
-
-      sides += `<path d="M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} L ${p2b.x.toFixed(2)} ${p2b.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 0 ${p1b.x.toFixed(2)} ${p1b.y.toFixed(2)} Z" fill="color-mix(in srgb, ${seg.color} 60%, black)"/>`;
-      tops += `<path class="donut-slice" d="M ${scx.toFixed(2)} ${scy.toFixed(2)} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z" fill="${seg.color}" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
-
-      const lr = r*0.62;
-      const lx = scx + lr*Math.cos(midAngle), ly = scy + lr*Math.sin(midAngle);
-      labels += `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.5); stroke-width:3px; stroke-linejoin:round; pointer-events:none;">${seg.count}</text>`;
+      const d = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(3)} ${end.y.toFixed(3)}`;
+      topRings += `<path class="donut-slice" d="${d}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" data-plant-status="${plantId}|${seg.key}" style="cursor:pointer;"/>`;
+      const mid = pointOnRing(cumulative + pct/2);
+      labels += `<text x="${mid.x.toFixed(2)}" y="${mid.y.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.5); stroke-width:3px; stroke-linejoin:round; pointer-events:none;">${seg.count}</text>`;
     }
     cumulative += pct;
   });
 
-  return `<svg viewBox="0 0 100 105" style="width:150px; height:150px; overflow:visible; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));">
-    <g>${sides}</g>
-    <g>${tops}</g>
+  const glossDash = circumference*0.4;
+  const gloss = `<circle cx="${cx}" cy="${cy}" r="${r-strokeW/2+3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3" stroke-dasharray="${glossDash.toFixed(2)} ${(circumference-glossDash).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})" pointer-events="none"/>`;
+
+  return `<svg viewBox="0 0 100 110" style="width:150px; height:150px; overflow:hidden; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));">
+    <g>${topRings}</g>
+    ${gloss}
     <g>${labels}</g>
   </svg>`;
 }
