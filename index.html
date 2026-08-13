@@ -92,8 +92,8 @@ a{color:var(--accent); text-decoration:none;}
 .value-clickable{cursor:pointer; display:inline-flex; align-items:baseline; gap:6px; transition:opacity .15s ease, text-decoration-color .15s ease; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:4px;}
 .toggle-btn{background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; width:20px; height:20px; font-size:10px; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0;}
 .toggle-btn:hover{border-color:var(--accent); color:var(--accent);}
-.pie-stat{cursor:pointer; text-align:center; transition:opacity .15s ease;}
-.pie-stat:hover{opacity:.7;}
+.legend-item{cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--muted); transition:color .15s ease;}
+.legend-item:hover{color:var(--text-strong);}
 
 .plant-chip{position:relative; display:inline-flex;}
 .plant-chip input{padding-right:14px;}
@@ -933,6 +933,37 @@ function switchView(view){
 }
 
 /* ===================== 전체 현황 ===================== */
+function donutChartSvg(c, w, n){
+  const total = c+w+n;
+  const cx=50, cy=50, r=32, strokeW=16;
+  const circumference = 2*Math.PI*r;
+  const segments = [
+    {count:c, color:'var(--red-text)'},
+    {count:w, color:'var(--amber-text)'},
+    {count:n, color:'var(--green-text)'},
+  ];
+  if(total===0){
+    return `<svg viewBox="0 0 100 100" style="width:96px; height:96px;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/></svg>`;
+  }
+  let cumulative = 0;
+  let rings = '', labels = '';
+  segments.forEach(seg=>{
+    const pct = seg.count/total*100;
+    if(pct>0){
+      const dash = circumference*pct/100;
+      const offset = -(cumulative/100)*circumference;
+      rings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${(circumference-dash).toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      const midAngleDeg = (cumulative + pct/2)/100*360 - 90;
+      const midAngleRad = midAngleDeg*Math.PI/180;
+      const lx = cx + r*Math.cos(midAngleRad);
+      const ly = cy + r*Math.sin(midAngleRad);
+      labels += `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:3px; stroke-linejoin:round;">${seg.count}</text>`;
+    }
+    cumulative += pct;
+  });
+  return `<svg viewBox="0 0 100 100" style="width:96px; height:96px;">${rings}${labels}</svg>`;
+}
+
 function renderHome(){
   const summaries = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)}));
 
@@ -941,31 +972,13 @@ function renderHome(){
     const w = summary.basinEvals.filter(be=>be.ev.status==='주의').length;
     const n = summary.basinEvals.filter(be=>be.ev.status==='정상').length;
     const total = c+w+n;
-    let gradient = 'var(--border)';
-    if(total>0){
-      const cPct = c/total*100;
-      const wPct = w/total*100;
-      gradient = `conic-gradient(var(--red-text) 0% ${cPct}%, var(--amber-text) ${cPct}% ${cPct+wPct}%, var(--green-text) ${cPct+wPct}% 100%)`;
-    }
     return `<div class="card" style="text-align:center;">
       <div class="indicator-name">${plant.name} <span style="font-weight:400; color:var(--muted); font-size:12px;">(총 ${total}지)</span></div>
-      <div style="position:relative; width:96px; height:96px; margin:14px auto;">
-        <div style="width:100%; height:100%; border-radius:50%; background:${gradient};"></div>
-        <div style="position:absolute; inset:16px; border-radius:50%; background:var(--card);"></div>
-      </div>
-      <div style="display:flex; justify-content:center; gap:18px;">
-        <div class="pie-stat" data-plant-status="${plant.id}|임박" style="color:var(--red-text);">
-          <div style="font-size:20px; font-weight:800;">${c}</div>
-          <div style="font-size:10.5px; color:var(--muted); font-weight:500;">임박</div>
-        </div>
-        <div class="pie-stat" data-plant-status="${plant.id}|주의" style="color:var(--amber-text);">
-          <div style="font-size:20px; font-weight:800;">${w}</div>
-          <div style="font-size:10.5px; color:var(--muted); font-weight:500;">주의</div>
-        </div>
-        <div class="pie-stat" data-plant-status="${plant.id}|정상" style="color:var(--green-text);">
-          <div style="font-size:20px; font-weight:800;">${n}</div>
-          <div style="font-size:10.5px; color:var(--muted); font-weight:500;">정상</div>
-        </div>
+      <div style="margin:14px auto; width:96px;">${donutChartSvg(c, w, n)}</div>
+      <div style="display:flex; justify-content:center; gap:14px;">
+        <div class="legend-item" data-plant-status="${plant.id}|임박"><span class="dot" style="background:var(--red-text);"></span>임박</div>
+        <div class="legend-item" data-plant-status="${plant.id}|주의"><span class="dot" style="background:var(--amber-text);"></span>주의</div>
+        <div class="legend-item" data-plant-status="${plant.id}|정상"><span class="dot" style="background:var(--green-text);"></span>정상</div>
       </div>
     </div>`;
   }).join('') || `<div class="card" style="color:var(--muted); font-size:13px;">등록된 정수장이 없습니다.</div>`;
