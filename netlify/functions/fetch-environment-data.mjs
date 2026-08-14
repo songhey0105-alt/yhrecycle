@@ -35,8 +35,14 @@ async function fetchRealPrecipitationAndAirTemp(plant) {
   target.setUTCDate(target.getUTCDate() - 1); // 오늘 데이터는 아직 다 안 쌓였을 수 있어 전날 기준으로 조회
   const dateStr = target.toISOString().slice(0, 10).replace(/-/g, '');
 
+  // data.go.kr에서 발급하는 서비스키는 이미 퍼센트 인코딩된 상태(%2B 등 포함)로 제공되는 경우가 많은데,
+  // URLSearchParams에 그대로 넣으면 다시 한 번 인코딩되어(이중 인코딩) 키가 깨집니다.
+  // 디코딩 가능한 값이면 원문으로 되돌린 뒤 URLSearchParams가 정확히 한 번만 인코딩하도록 합니다.
+  let serviceKey = process.env.KMA_API_KEY;
+  try { serviceKey = decodeURIComponent(serviceKey); } catch (e) { /* 이미 원문이면 그대로 사용 */ }
+
   const params = new URLSearchParams({
-    serviceKey: process.env.KMA_API_KEY,
+    serviceKey,
     pageNo: '1',
     numOfRows: '24',
     dataType: 'JSON',
@@ -62,7 +68,7 @@ async function fetchRealPrecipitationAndAirTemp(plant) {
 
   const header = json?.response?.header;
   if (!header || header.resultCode !== '00') {
-    throw new Error(`KMA API 오류(${plant.kmaStationId}): ${header?.resultMsg || '알 수 없는 오류'}`);
+    throw new Error(`KMA API 오류(${plant.kmaStationId}): [${header?.resultCode}] ${header?.resultMsg || text.slice(0, 200)}`);
   }
 
   const rawItems = json?.response?.body?.items?.item;
