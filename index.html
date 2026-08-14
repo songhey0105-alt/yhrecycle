@@ -1008,7 +1008,7 @@ function renderHome(){
     const total = c+w+n;
     return `<div class="card" style="text-align:center;">
       <div style="font-size:20px; font-weight:800; color:var(--text-strong); letter-spacing:-0.01em;">${plant.name} <span style="font-weight:500; color:var(--muted); font-size:13px;">(총 ${total}지)</span></div>
-      <div style="margin:14px auto; width:150px;">${donutChartSvg(plant.id, c, w, n)}</div>
+      <div style="margin:14px auto -6px; width:150px;">${donutChartSvg(plant.id, c, w, n)}</div>
       <div style="display:flex; justify-content:center; gap:14px;">
         <div class="legend-item" data-plant-status="${plant.id}|임박"><span class="dot" style="background:var(--red-text);"></span>임박</div>
         <div class="legend-item" data-plant-status="${plant.id}|주의"><span class="dot" style="background:var(--amber-text);"></span>주의</div>
