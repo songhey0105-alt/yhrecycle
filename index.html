@@ -345,7 +345,7 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
       <div class="card" style="margin-bottom:16px;">
         <div class="grid grid-3">
           <div class="field">
-            <label class="field-label">일일 재생 처리량 (톤/일)</label>
+            <label class="field-label">일일 재생 처리량 (㎥/일)</label>
             <input type="number" id="simCapacity" step="0.1">
           </div>
           <div class="field">
@@ -413,7 +413,7 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
       <div class="section-title">재생시설</div>
       <div class="card" style="margin-bottom:20px; max-width:320px;">
         <div class="field" style="margin-bottom:0;">
-          <label class="field-label">일일 재생 처리 가능량 (톤/일)</label>
+          <label class="field-label">일일 재생 처리 가능량 (㎥/일)</label>
           <input type="number" id="adminFacilityCapacity" step="0.1">
         </div>
       </div>
@@ -500,7 +500,7 @@ const DEFAULT_PLANTS = [
   {id:'yeoncho', name:'연초정수장'},
 ];
 
-const DEFAULT_FACILITY = {capacityPerDay: 2.6};
+const DEFAULT_FACILITY = {capacityPerDay: 30};
 
 const DEFAULT_WAREHOUSES = [
   {id:'W1', name:'구미 입상활성탄 비축창고', capacity:4200, stock:90, safety:75, dailyOutflow:3.0},
@@ -655,7 +655,7 @@ async function saveData(){
     syncTableToSupabase('plants', PLANTS, plantToRow),
     syncTableToSupabase('warehouses', WAREHOUSES, warehouseToRow),
     syncTableToSupabase('basins', BASINS, basinToRow),
-    sb.from('facility').upsert([{id:1, capacity_per_day: FACILITY.capacityPerDay}]),
+    sb.from('facility').update({capacity_per_day: FACILITY.capacityPerDay}).eq('id', 1),
   ]);
 }
 
