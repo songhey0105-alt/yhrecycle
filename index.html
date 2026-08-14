@@ -305,7 +305,7 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
       <div class="grid grid-2" id="predictGauges"></div>
 
       <div class="section-title">환경 데이터 (강수량 · 수온)</div>
-      <div class="grid grid-2" id="predictEnvCharts"></div>
+      <div class="grid grid-3" id="predictEnvCharts"></div>
     </section>
 
     <!-- 재생·공급 최적화 -->
@@ -1252,6 +1252,7 @@ async function renderPredictEnvCharts(plantId){
     return `${d.getMonth()+1}/${d.getDate()}`;
   });
   const precip = rows.map(r=>Number(r.precipitation_mm)||0);
+  const airtemp = rows.map(r=>Number(r.air_temp_c)||0);
   const watertemp = rows.map(r=>Number(r.water_temp_c)||0);
   const latest = rows[rows.length-1];
 
@@ -1269,8 +1270,18 @@ async function renderPredictEnvCharts(plantId){
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div class="indicator-name">수온</div>
+          <div class="indicator-name">기온</div>
           <div class="indicator-meta">주 단위로 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
+        </div>
+        <div class="indicator-value">${latest.air_temp_c==null ? '-' : fmt(latest.air_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
+      </div>
+      ${trendChart(airtemp, {labels: dateLabels})}
+    </div>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="indicator-name">수온</div>
+          <div class="indicator-meta">주 단위로 누적 수집 (WAMIS 미연동 · 가상 데이터)</div>
         </div>
         <div class="indicator-value">${fmt(latest.water_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
       </div>
