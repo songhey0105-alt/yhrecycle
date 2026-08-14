@@ -1285,8 +1285,9 @@ async function renderPredictEnvCharts(plantId){
     envCard('강수량', 'precipitation_mm', 'mm', '매일 누적 수집', 'source'),
     envCard('기온', 'air_temp_c', '℃', '매일 누적 수집', 'source'),
     envCard('수온', 'water_temp_c', '℃', '주 단위 누적 수집', 'water_temp_source'),
-    envCard('지오스민', 'geosmin_ng_l', 'ng/L', '월 단위 누적 수집', 'taste_odor_source'),
-    envCard('2-MIB', 'mib_ng_l', 'ng/L', '월 단위 누적 수집', 'taste_odor_source'),
+    envCard('지오스민', 'geosmin_ng_l', 'ng/L', '주 단위 누적 수집', 'taste_odor_source'),
+    envCard('2-MIB', 'mib_ng_l', 'ng/L', '주 단위 누적 수집', 'taste_odor_source'),
+    envCard('원수 유해남조류 세포수', 'algae_cell_count', '세포/mL', '주 단위 누적 수집', 'water_temp_source'),
   ].join('');
 }
 
