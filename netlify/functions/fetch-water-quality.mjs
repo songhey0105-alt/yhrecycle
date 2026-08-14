@@ -8,10 +8,10 @@ const SUPABASE_KEY = 'sb_publishable__FQ1RVW68XSRozWOQez8Bg_Zf44FbNd';
 
 // 정수장 id, 이름, 조류경보제 관측지점 코드(swmnCode)
 const PLANTS = [
-  { id: 'gumi', name: '구미정수장', swmnCode: '2011A26' }, // 해평
-  { id: 'goryeong', name: '고령정수장', swmnCode: '2011A56' }, // 강정·고령
-  { id: 'bansong', name: '반송정수장', swmnCode: '2020A33' }, // 칠서
-  { id: 'yeoncho', name: '연초정수장', swmnCode: '2018G20' },
+  { id: 'gumi', name: '구미정수장', swmnCode: '2011G26' }, // 낙동강 해평
+  { id: 'goryeong', name: '고령정수장', swmnCode: '2011G56' }, // 낙동강 강정·고령
+  { id: 'bansong', name: '반송정수장', swmnCode: '2020G33' }, // 낙동강 칠서
+  { id: 'yeoncho', name: '연초정수장', swmnCode: '2018G20' }, // 진양호 내동 - 거제 인근에 조류경보제 관측지점이 없어 지리적으로 가장 가까운 대안
 ];
 
 function randomBetween(min, max, decimals = 1) {
