@@ -305,7 +305,7 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
       <div class="grid grid-2" id="predictGauges"></div>
 
       <div class="section-title">환경 데이터 (강수량 · 수온)</div>
-      <div class="grid grid-3" id="predictEnvCharts"></div>
+      <div class="grid" id="predictEnvCharts" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));"></div>
     </section>
 
     <!-- 재생·공급 최적화 -->
@@ -1242,52 +1242,52 @@ async function renderPredictEnvCharts(plantId){
   }
   if(requestId !== envChartsRequestId) return;
 
-  if(rows.length < 2){
-    container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">아직 쌓인 환경 데이터가 충분하지 않습니다 (${rows.length}건). 매일 자동으로 쌓입니다.</div>`;
+  if(rows.length < 1){
+    container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">아직 쌓인 환경 데이터가 없습니다. 자동으로 쌓이기 시작하면 여기에 표시됩니다.</div>`;
     return;
   }
 
-  const dateLabels = rows.map(r=>{
-    const d = new Date(r.recorded_date);
-    return `${d.getMonth()+1}/${d.getDate()}`;
-  });
-  const precip = rows.map(r=>Number(r.precipitation_mm)||0);
-  const airtemp = rows.map(r=>Number(r.air_temp_c)||0);
-  const watertemp = rows.map(r=>Number(r.water_temp_c)||0);
-  const latest = rows[rows.length-1];
+  function seriesFor(field){
+    const filtered = rows.filter(r=>r[field]!=null);
+    const labels = filtered.map(r=>{ const d=new Date(r.recorded_date); return `${d.getMonth()+1}/${d.getDate()}`; });
+    const values = filtered.map(r=>Number(r[field])||0);
+    const latest = filtered[filtered.length-1] || null;
+    return {labels, values, latest, count: filtered.length};
+  }
 
-  container.innerHTML = `
-    <div class="card">
+  function envCard(name, field, unit, cadence, sourceField){
+    const s = seriesFor(field);
+    if(s.count < 1){
+      return `<div class="card">
+        <div class="indicator-name">${name}</div>
+        <div class="indicator-meta" style="margin-top:6px;">${cadence} · 아직 쌓인 데이터가 없습니다</div>
+      </div>`;
+    }
+    const sourceLabel = sourceField
+      ? (s.latest[sourceField]==null ? '연동 대기' : (s.latest[sourceField]==='mock' ? '가상 데이터' : '실측 데이터'))
+      : (s.latest.source==='mock' ? '가상 데이터' : '실측 데이터');
+    const body = s.count < 2
+      ? `<div class="indicator-meta" style="margin-top:10px;">추이를 표시하려면 데이터가 2건 이상 필요합니다 (현재 ${s.count}건)</div>`
+      : trendChart(s.values, {labels: s.labels});
+    return `<div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div class="indicator-name">강수량</div>
-          <div class="indicator-meta">매일 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
+          <div class="indicator-name">${name}</div>
+          <div class="indicator-meta">${cadence} (${sourceLabel})</div>
         </div>
-        <div class="indicator-value">${fmt(latest.precipitation_mm)} <span style="font-size:11px; color:var(--muted);">mm</span></div>
+        <div class="indicator-value">${fmt(s.latest[field])} <span style="font-size:11px; color:var(--muted);">${unit}</span></div>
       </div>
-      ${trendChart(precip, {labels: dateLabels})}
-    </div>
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div class="indicator-name">기온</div>
-          <div class="indicator-meta">매일 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
-        </div>
-        <div class="indicator-value">${latest.air_temp_c==null ? '-' : fmt(latest.air_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
-      </div>
-      ${trendChart(airtemp, {labels: dateLabels})}
-    </div>
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div class="indicator-name">수온</div>
-          <div class="indicator-meta">매일 누적 수집 (WAMIS 미연동 · 가상 데이터)</div>
-        </div>
-        <div class="indicator-value">${fmt(latest.water_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
-      </div>
-      ${trendChart(watertemp, {labels: dateLabels})}
-    </div>
-  `;
+      ${body}
+    </div>`;
+  }
+
+  container.innerHTML = [
+    envCard('강수량', 'precipitation_mm', 'mm', '매일 누적 수집', 'source'),
+    envCard('기온', 'air_temp_c', '℃', '매일 누적 수집', 'source'),
+    envCard('수온', 'water_temp_c', '℃', '주 단위 누적 수집', 'water_temp_source'),
+    envCard('지오스민', 'geosmin_ng_l', 'ng/L', '월 단위 누적 수집', 'taste_odor_source'),
+    envCard('2-MIB', 'mib_ng_l', 'ng/L', '월 단위 누적 수집', 'taste_odor_source'),
+  ].join('');
 }
 
 /* ===================== 사전보고서 ===================== */

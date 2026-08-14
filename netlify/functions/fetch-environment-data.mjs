@@ -1,17 +1,16 @@
-// 정수장별 강수량·기온·수온 데이터를 매일 자동으로 가져와 Supabase에 저장하는 함수.
-// 강수량·기온은 기상청 ASOS 시간자료 API로 실제 연동되어 있습니다.
-// 수온은 WAMIS API 키가 아직 없어 가상 데이터로 채워지며,
-// Netlify 환경변수(WAMIS_API_KEY)가 설정되고 fetchRealWaterTemp()를 채우면 자동으로 실제 데이터로 전환됩니다.
+// 정수장별 강수량·기온 데이터를 매일 자동으로 가져와 Supabase에 저장하는 함수.
+// 기상청 ASOS 시간자료 API로 실제 연동되어 있습니다.
+// 수온은 fetch-water-temp.mjs(주 단위), 지오스민·2-MIB는 fetch-taste-odor.mjs(월 단위)에서 각각 처리합니다.
 
 const SUPABASE_URL = 'https://ndcdxqqljnbwnwgqszwi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable__FQ1RVW68XSRozWOQez8Bg_Zf44FbNd';
 
-// 정수장 id, 이름, 기상청 ASOS 지점번호(kmaStationId)·WAMIS 관측소 코드(wamisStationId)
+// 정수장 id, 이름, 기상청 ASOS 지점번호
 const PLANTS = [
-  { id: 'gumi', name: '구미정수장', kmaStationId: 279, wamisStationId: null },
-  { id: 'goryeong', name: '고령정수장', kmaStationId: 143, wamisStationId: null },
-  { id: 'bansong', name: '반송정수장', kmaStationId: 155, wamisStationId: null }, // 창원 지점(가장 가까운 ASOS 관측소)
-  { id: 'yeoncho', name: '연초정수장', kmaStationId: 294, wamisStationId: null },
+  { id: 'gumi', name: '구미정수장', kmaStationId: 279 },
+  { id: 'goryeong', name: '고령정수장', kmaStationId: 143 },
+  { id: 'bansong', name: '반송정수장', kmaStationId: 155 }, // 창원 지점(가장 가까운 ASOS 관측소)
+  { id: 'yeoncho', name: '연초정수장', kmaStationId: 294 },
 ];
 
 function randomBetween(min, max, decimals = 1) {
@@ -21,11 +20,6 @@ function randomBetween(min, max, decimals = 1) {
 // 강수량·기온 가상 데이터 (기상청 키가 없거나 호출 실패 시 사용)
 function generateMockPrecipAirTemp() {
   return { precipitation_mm: randomBetween(0, 40, 1), air_temp_c: randomBetween(5, 33, 1) };
-}
-
-// 수온 가상 데이터 (WAMIS 키가 없거나 호출 실패 시 사용)
-function generateMockWaterTemp() {
-  return { water_temp_c: randomBetween(8, 27, 1) };
 }
 
 // 기상청_지상(종관, ASOS) 시간자료 조회서비스
@@ -89,54 +83,19 @@ async function fetchRealPrecipitationAndAirTemp(plant) {
   };
 }
 
-// TODO: WAMIS API 키를 발급받으면 이 함수 안을 실제 API 호출 코드로 채우세요.
-// 예: `https://www.wamis.go.kr:8081/wamis/openapi/wkw/...?key=${process.env.WAMIS_API_KEY}&obscd=${plant.wamisStationId}`
-async function fetchRealWaterTemp(plant) {
-  throw new Error('WAMIS 실제 연동 미구현');
-}
-
-async function getPlantEnvironmentData(plant) {
+async function getPlantPrecipAirTemp(plant) {
   const hasKmaKey = !!process.env.KMA_API_KEY;
-  const hasWamisKey = !!process.env.WAMIS_API_KEY;
 
-  let precipAirTemp;
-  let precipSource;
   if (hasKmaKey) {
     try {
-      precipAirTemp = await fetchRealPrecipitationAndAirTemp(plant);
-      precipSource = 'real';
+      const data = await fetchRealPrecipitationAndAirTemp(plant);
+      return { ...data, source: 'real' };
     } catch (e) {
       console.error(`[${plant.id}] 기상청 API 호출 실패, 가상 데이터로 대체:`, e.message);
-      precipAirTemp = generateMockPrecipAirTemp();
-      precipSource = 'mock';
+      return { ...generateMockPrecipAirTemp(), source: 'mock' };
     }
-  } else {
-    precipAirTemp = generateMockPrecipAirTemp();
-    precipSource = 'mock';
   }
-
-  let waterTemp;
-  let waterSource;
-  if (hasWamisKey) {
-    try {
-      waterTemp = await fetchRealWaterTemp(plant);
-      waterSource = 'real';
-    } catch (e) {
-      console.error(`[${plant.id}] WAMIS API 호출 실패, 가상 데이터로 대체:`, e.message);
-      waterTemp = generateMockWaterTemp();
-      waterSource = 'mock';
-    }
-  } else {
-    waterTemp = generateMockWaterTemp();
-    waterSource = 'mock';
-  }
-
-  return {
-    precipitation_mm: precipAirTemp.precipitation_mm,
-    air_temp_c: precipAirTemp.air_temp_c,
-    water_temp_c: waterTemp.water_temp_c,
-    source: (precipSource === 'real' || waterSource === 'real') ? 'real' : 'mock',
-  };
+  return { ...generateMockPrecipAirTemp(), source: 'mock' };
 }
 
 export default async () => {
@@ -144,13 +103,12 @@ export default async () => {
 
   const rows = [];
   for (const plant of PLANTS) {
-    const data = await getPlantEnvironmentData(plant);
+    const data = await getPlantPrecipAirTemp(plant);
     rows.push({
       plant_id: plant.id,
       recorded_date: today,
       precipitation_mm: data.precipitation_mm,
       air_temp_c: data.air_temp_c,
-      water_temp_c: data.water_temp_c,
       source: data.source,
     });
   }
