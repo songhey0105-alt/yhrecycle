@@ -42,13 +42,7 @@ function extractTag(block, tag) {
   return m[1] !== undefined ? m[1] : null;
 }
 
-// 환경부 국립환경과학원_조류경보제 조회서비스 (algaePreMeasure)
-// 이번 달 측정 항목 중 측정일자(chckDe)가 가장 최근인 항목을 사용합니다.
-async function fetchRealWaterQuality(plant) {
-  const now = new Date();
-  const yyyy = String(now.getUTCFullYear());
-  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-
+async function fetchAlgaeMonth(plant, yyyy, mm) {
   // data.go.kr 서비스키는 이미 퍼센트 인코딩된 상태로 제공되는 경우가 많아, 그대로 쓰면 이중 인코딩됩니다.
   let serviceKey = process.env.ALGAE_API_KEY;
   try { serviceKey = decodeURIComponent(serviceKey); } catch (e) { /* 이미 원문이면 그대로 사용 */ }
@@ -73,9 +67,25 @@ async function fetchRealWaterQuality(plant) {
     throw new Error(`조류경보제 API 오류(${plant.swmnCode}): [${resultCode}] ${resultMsg || text.slice(0, 200)}`);
   }
 
-  const itemBlocks = [...text.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
+  return [...text.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
+}
+
+// 환경부 국립환경과학원_조류경보제 조회서비스 (algaePreMeasure)
+// 실험실 분석 지연 등으로 이번 달 자료가 아직 없을 수 있어, 최근 3개월을 거슬러 올라가며 조회하고
+// 그중 측정일자(chckDe)가 가장 최근인 항목을 사용합니다.
+async function fetchRealWaterQuality(plant) {
+  const now = new Date();
+  let itemBlocks = [];
+  let triedMonths = [];
+  for (let back = 0; back < 3 && itemBlocks.length === 0; back++) {
+    const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back, 1));
+    const yyyy = String(target.getUTCFullYear());
+    const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+    triedMonths.push(`${yyyy}-${mm}`);
+    itemBlocks = await fetchAlgaeMonth(plant, yyyy, mm);
+  }
   if (itemBlocks.length === 0) {
-    throw new Error(`조류경보제 응답에 데이터가 없습니다(지점 ${plant.swmnCode}, ${yyyy}-${mm})`);
+    throw new Error(`조류경보제 응답에 데이터가 없습니다(지점 ${plant.swmnCode}, 조회월: ${triedMonths.join(', ')})`);
   }
 
   let latestBlock = null;
