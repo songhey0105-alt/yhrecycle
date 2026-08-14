@@ -1243,7 +1243,7 @@ async function renderPredictEnvCharts(plantId){
   if(requestId !== envChartsRequestId) return;
 
   if(rows.length < 2){
-    container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">아직 쌓인 환경 데이터가 충분하지 않습니다 (${rows.length}건). 매주 자동으로 쌓입니다.</div>`;
+    container.innerHTML = `<div class="card" style="color:var(--muted); font-size:13.5px;">아직 쌓인 환경 데이터가 충분하지 않습니다 (${rows.length}건). 매일 자동으로 쌓입니다.</div>`;
     return;
   }
 
@@ -1261,7 +1261,7 @@ async function renderPredictEnvCharts(plantId){
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div class="indicator-name">강수량</div>
-          <div class="indicator-meta">주 단위로 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
+          <div class="indicator-meta">매일 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
         </div>
         <div class="indicator-value">${fmt(latest.precipitation_mm)} <span style="font-size:11px; color:var(--muted);">mm</span></div>
       </div>
@@ -1271,7 +1271,7 @@ async function renderPredictEnvCharts(plantId){
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div class="indicator-name">기온</div>
-          <div class="indicator-meta">주 단위로 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
+          <div class="indicator-meta">매일 누적 수집 (${latest.source==='mock'?'가상 데이터':'실측 데이터'})</div>
         </div>
         <div class="indicator-value">${latest.air_temp_c==null ? '-' : fmt(latest.air_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
       </div>
@@ -1281,7 +1281,7 @@ async function renderPredictEnvCharts(plantId){
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div class="indicator-name">수온</div>
-          <div class="indicator-meta">주 단위로 누적 수집 (WAMIS 미연동 · 가상 데이터)</div>
+          <div class="indicator-meta">매일 누적 수집 (WAMIS 미연동 · 가상 데이터)</div>
         </div>
         <div class="indicator-value">${fmt(latest.water_temp_c)} <span style="font-size:11px; color:var(--muted);">℃</span></div>
       </div>

@@ -1,4 +1,4 @@
-// 정수장별 강수량·기온·수온 데이터를 매주 자동으로 가져와 Supabase에 저장하는 함수.
+// 정수장별 강수량·기온·수온 데이터를 매일 자동으로 가져와 Supabase에 저장하는 함수.
 // 강수량·기온은 기상청 ASOS 시간자료 API로 실제 연동되어 있습니다.
 // 수온은 WAMIS API 키가 아직 없어 가상 데이터로 채워지며,
 // Netlify 환경변수(WAMIS_API_KEY)가 설정되고 fetchRealWaterTemp()를 채우면 자동으로 실제 데이터로 전환됩니다.
@@ -166,7 +166,7 @@ export default async () => {
   });
 };
 
-// 매주 자동 실행 (매주 월요일 00:00 UTC — 한국시간 월요일 오전 9시)
+// 매일 자동 실행 (00:00 UTC — 한국시간 오전 9시)
 export const config = {
-  schedule: '0 0 * * 1',
+  schedule: '0 0 * * *',
 };
