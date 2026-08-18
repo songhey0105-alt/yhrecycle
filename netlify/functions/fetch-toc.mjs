@@ -1,5 +1,6 @@
 // 정수장 원수의 TOC(총유기탄소) 데이터를 주 단위로 자동으로 가져와 Supabase에 저장하는 함수.
 // 환경부 국립환경과학원_물환경 수질측정망 운영결과 조회서비스(getWaterMeasuringList) API로 실제 연동되어 있습니다.
+// 조류경보제 API와 같은 서비스(1480523)의 같은 키를 쓰므로 별도 키 없이 ALGAE_API_KEY를 그대로 사용합니다.
 
 const SUPABASE_URL = 'https://ndcdxqqljnbwnwgqszwi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable__FQ1RVW68XSRozWOQez8Bg_Zf44FbNd';
@@ -37,7 +38,7 @@ function extractTag(block, tag) {
 
 async function fetchTocMonth(plant, yyyy, mm) {
   // data.go.kr 서비스키는 이미 퍼센트 인코딩된 상태로 제공되는 경우가 많아, 그대로 쓰면 이중 인코딩됩니다.
-  let serviceKey = process.env.TOC_API_KEY;
+  let serviceKey = process.env.ALGAE_API_KEY;
   try { serviceKey = decodeURIComponent(serviceKey); } catch (e) { /* 이미 원문이면 그대로 사용 */ }
 
   const params = new URLSearchParams({
@@ -96,7 +97,7 @@ async function fetchRealToc(plant) {
 }
 
 async function getPlantToc(plant) {
-  const hasKey = !!process.env.TOC_API_KEY;
+  const hasKey = !!process.env.ALGAE_API_KEY;
 
   if (hasKey) {
     try {
