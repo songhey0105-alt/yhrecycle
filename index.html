@@ -88,7 +88,9 @@ a{color:var(--accent); text-decoration:none;}
   background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:28px;
   box-shadow:var(--shadow); backdrop-filter:blur(var(--blur)) saturate(140%); -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);
 }
-.stat-card .stat-icon{width:36px; height:36px; border-radius:12px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px;}
+.stat-card .stat-header{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+.stat-card .stat-icon{width:32px; height:32px; flex-shrink:0; border-radius:10px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:16px;}
+.stat-card .stat-header .label{margin-bottom:0;}
 .stat-card .label{font-size:16px; font-weight:700; color:var(--text-strong); margin-bottom:10px;}
 .stat-card .value{font-size:36px; font-weight:800; letter-spacing:-0.03em; color:var(--text-strong);}
 .value-clickable{cursor:pointer; display:inline-flex; align-items:baseline; gap:6px; transition:opacity .15s ease, text-decoration-color .15s ease; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:4px;}
@@ -318,26 +320,22 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
 
       <div class="grid grid-4" style="margin-bottom:8px;">
         <div class="card stat-card">
-          <div class="stat-icon">🔁</div>
-          <div class="label">총 활성탄 교체량</div>
+          <div class="stat-header"><div class="stat-icon">🔁</div><div class="label">총 활성탄 교체량</div></div>
           <div class="value" id="totalReplaceAmount">-</div>
           <div class="sub">교체임박 흡착지 기준 합계</div>
         </div>
         <div class="card stat-card">
-          <div class="stat-icon">♻️</div>
-          <div class="label">재생탄 생산량 (수율 80%)</div>
+          <div class="stat-header"><div class="stat-icon">♻️</div><div class="label">재생탄 생산량 (수율 80%)</div></div>
           <div class="value" id="regenYieldAmount">-</div>
           <div class="sub">총 교체량 × 80%</div>
         </div>
         <div class="card stat-card">
-          <div class="stat-icon">🆕</div>
-          <div class="label">신탄 보충 필요량 (손실 20%)</div>
+          <div class="stat-header"><div class="stat-icon">➕</div><div class="label">신탄 보충 필요량 (손실 20%)</div></div>
           <div class="value" id="freshTopupAmount">-</div>
           <div class="sub">총 교체량 × 20%</div>
         </div>
         <div class="card stat-card">
-          <div class="stat-icon">⏱️</div>
-          <div class="label">전체 재생/교체 소요일</div>
+          <div class="stat-header"><div class="stat-icon">⏱️</div><div class="label">전체 재생/교체 소요일</div></div>
           <div class="value" id="totalDaysNeeded">-</div>
           <div class="sub" id="totalDaysNeededSub">-</div>
         </div>
