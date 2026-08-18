@@ -315,21 +315,26 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
     <section class="view" id="view-optimize">
       <div class="page-header"><h1>재생·공급 최적화</h1><p>재생시설·비축창고 현황과 우선순위를 확인하고 시뮬레이션을 실행합니다.</p></div>
 
-      <div class="grid grid-3" style="margin-bottom:8px;">
+      <div class="grid grid-4" style="margin-bottom:8px;">
         <div class="card stat-card">
-          <div class="label">재생시설 가동률</div>
-          <div class="value" id="facilityRate">-</div>
-          <div class="bar-track"><div class="bar-fill" id="facilityBar"></div></div>
+          <div class="label">총 활성탄 교체량</div>
+          <div class="value" id="totalReplaceAmount">-</div>
+          <div class="sub">교체임박 흡착지 기준 합계</div>
         </div>
         <div class="card stat-card">
-          <div class="label">재생 대기 물량</div>
-          <div class="value" id="facilityQueue">-</div>
-          <div class="sub">재생 권고 정수장 기준 합계</div>
+          <div class="label">재생탄 생산량 (수율 80%)</div>
+          <div class="value" id="regenYieldAmount">-</div>
+          <div class="sub">총 교체량 × 80%</div>
         </div>
         <div class="card stat-card">
-          <div class="label">안전재고 미달 창고</div>
-          <div class="value" id="warehouseAlertCount">-</div>
-          <div class="sub" id="warehouseAlertSub">-</div>
+          <div class="label">신탄 보충 필요량 (손실 20%)</div>
+          <div class="value" id="freshTopupAmount">-</div>
+          <div class="sub">총 교체량 × 20%</div>
+        </div>
+        <div class="card stat-card">
+          <div class="label">전체 재생/교체 소요일</div>
+          <div class="value" id="totalDaysNeeded">-</div>
+          <div class="sub" id="totalDaysNeededSub">-</div>
         </div>
       </div>
 
@@ -1402,13 +1407,18 @@ function renderOptimize(){
   const summaries = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)}));
   const criticalPlants = summaries.filter(s=>s.summary.status==='임박');
   const criticalBasinCount = criticalPlants.reduce((sum,s)=>sum+s.summary.basinEvals.filter(be=>be.ev.status==='임박').length, 0);
-  const rate = BASINS.length ? Math.min(100, Math.round(criticalBasinCount / BASINS.length * 100)) : 0;
 
-  document.getElementById('facilityRate').textContent = rate + '%';
-  document.getElementById('facilityBar').style.width = rate + '%';
-  document.getElementById('facilityQueue').textContent = criticalBasinCount + '개 흡착지';
-  document.getElementById('warehouseAlertCount').textContent = WAREHOUSES.filter(w=>w.stock<w.safety).length + '개소';
-  document.getElementById('warehouseAlertSub').textContent = WAREHOUSES.filter(w=>w.stock<w.safety).map(w=>w.name).join(', ') || '없음';
+  const criticalBasins = summaries.flatMap(s=>s.summary.basinEvals.filter(be=>be.ev.status==='임박').map(be=>be.basin));
+  const totalReplace = criticalBasins.reduce((sum,b)=>sum+b.gacTon, 0);
+  const regenYield = totalReplace * 0.8;
+  const freshTopup = totalReplace * 0.2;
+  const daysNeeded = FACILITY.capacityPerDay > 0 ? Math.ceil(totalReplace / FACILITY.capacityPerDay) : 0;
+
+  document.getElementById('totalReplaceAmount').textContent = fmt(totalReplace) + '톤';
+  document.getElementById('regenYieldAmount').textContent = fmt(regenYield) + '톤';
+  document.getElementById('freshTopupAmount').textContent = fmt(freshTopup) + '톤';
+  document.getElementById('totalDaysNeeded').textContent = totalReplace>0 ? daysNeeded + '일' : '0일';
+  document.getElementById('totalDaysNeededSub').textContent = `재생시설 처리능력 ${FACILITY.capacityPerDay}㎥/일 기준`;
 
   const ranked = criticalPlants.slice().sort((a,b)=>
     b.summary.basinEvals.filter(be=>be.ev.status==='임박').length - a.summary.basinEvals.filter(be=>be.ev.status==='임박').length
