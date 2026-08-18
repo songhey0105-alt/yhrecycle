@@ -88,6 +88,7 @@ a{color:var(--accent); text-decoration:none;}
   background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:28px;
   box-shadow:var(--shadow); backdrop-filter:blur(var(--blur)) saturate(140%); -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);
 }
+.stat-card .stat-icon{width:36px; height:36px; border-radius:12px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px;}
 .stat-card .label{font-size:16px; font-weight:700; color:var(--text-strong); margin-bottom:10px;}
 .stat-card .value{font-size:36px; font-weight:800; letter-spacing:-0.03em; color:var(--text-strong);}
 .value-clickable{cursor:pointer; display:inline-flex; align-items:baseline; gap:6px; transition:opacity .15s ease, text-decoration-color .15s ease; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:4px;}
@@ -317,21 +318,25 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
 
       <div class="grid grid-4" style="margin-bottom:8px;">
         <div class="card stat-card">
+          <div class="stat-icon">🔁</div>
           <div class="label">총 활성탄 교체량</div>
           <div class="value" id="totalReplaceAmount">-</div>
           <div class="sub">교체임박 흡착지 기준 합계</div>
         </div>
         <div class="card stat-card">
+          <div class="stat-icon">♻️</div>
           <div class="label">재생탄 생산량 (수율 80%)</div>
           <div class="value" id="regenYieldAmount">-</div>
           <div class="sub">총 교체량 × 80%</div>
         </div>
         <div class="card stat-card">
+          <div class="stat-icon">🆕</div>
           <div class="label">신탄 보충 필요량 (손실 20%)</div>
           <div class="value" id="freshTopupAmount">-</div>
           <div class="sub">총 교체량 × 20%</div>
         </div>
         <div class="card stat-card">
+          <div class="stat-icon">⏱️</div>
           <div class="label">전체 재생/교체 소요일</div>
           <div class="value" id="totalDaysNeeded">-</div>
           <div class="sub" id="totalDaysNeededSub">-</div>
@@ -1414,9 +1419,9 @@ function renderOptimize(){
   const freshTopup = totalReplace * 0.2;
   const daysNeeded = FACILITY.capacityPerDay > 0 ? Math.ceil(totalReplace / FACILITY.capacityPerDay) : 0;
 
-  document.getElementById('totalReplaceAmount').textContent = fmt(totalReplace) + '톤';
-  document.getElementById('regenYieldAmount').textContent = fmt(regenYield) + '톤';
-  document.getElementById('freshTopupAmount').textContent = fmt(freshTopup) + '톤';
+  document.getElementById('totalReplaceAmount').textContent = fmt(totalReplace) + '㎥';
+  document.getElementById('regenYieldAmount').textContent = fmt(regenYield) + '㎥';
+  document.getElementById('freshTopupAmount').textContent = fmt(freshTopup) + '㎥';
   document.getElementById('totalDaysNeeded').textContent = totalReplace>0 ? daysNeeded + '일' : '0일';
   document.getElementById('totalDaysNeededSub').textContent = `재생시설 처리능력 ${FACILITY.capacityPerDay}㎥/일 기준`;
 
