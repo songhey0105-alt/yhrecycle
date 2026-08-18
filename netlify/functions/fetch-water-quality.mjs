@@ -70,41 +70,44 @@ async function fetchAlgaeMonth(plant, yyyy, mm) {
   return [...text.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
 }
 
-// 환경부 국립환경과학원_조류경보제 조회서비스 (algaePreMeasure)
-// 실험실 분석 지연 등으로 이번 달 자료가 아직 없을 수 있어, 최근 3개월을 거슬러 올라가며 조회하고
-// 그중 측정일자(chckDe)가 가장 최근인 항목을 사용합니다.
-async function fetchRealWaterQuality(plant) {
-  const now = new Date();
-  let itemBlocks = [];
-  let triedMonths = [];
-  for (let back = 0; back < 3 && itemBlocks.length === 0; back++) {
-    const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back, 1));
-    const yyyy = String(target.getUTCFullYear());
-    const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
-    triedMonths.push(`${yyyy}-${mm}`);
-    itemBlocks = await fetchAlgaeMonth(plant, yyyy, mm);
-  }
-  if (itemBlocks.length === 0) {
-    throw new Error(`조류경보제 응답에 데이터가 없습니다(지점 ${plant.swmnCode}, 조회월: ${triedMonths.join(', ')})`);
-  }
-
-  let latestBlock = null;
-  let latestDate = null;
+// 항목별로 측정일자(chckDe)가 가장 최근이면서 해당 태그 값이 실제로 채워진(숫자로 파싱되는) 항목을 찾습니다.
+// 지오스민·2-MIB는 실험실 분석 항목이라 수온·남조류세포수보다 훨씬 드문드문(격주~월 1회 수준) 채워지므로,
+// 네 항목을 같은 회차에서 한꺼번에 뽑으면 그 회차에 아직 분석이 안 끝난 항목만 계속 비어 보이게 됩니다.
+function latestWithValue(itemBlocks, tag) {
+  let best = null;
+  let bestDate = null;
   for (const block of itemBlocks) {
+    const raw = extractTag(block, tag);
+    const value = parseNumeric(raw);
+    if (value == null) continue;
     const chckDe = extractTag(block, 'chckDe');
     if (!chckDe) continue;
     const d = new Date(chckDe.replace(/\./g, '-'));
-    if (!latestDate || d > latestDate) { latestDate = d; latestBlock = block; }
+    if (!bestDate || d > bestDate) { bestDate = d; best = value; }
   }
-  if (!latestBlock) {
-    throw new Error(`조류경보제 응답에서 측정일자를 찾을 수 없습니다(지점 ${plant.swmnCode})`);
+  return best;
+}
+
+// 환경부 국립환경과학원_조류경보제 조회서비스 (algaePreMeasure)
+// 최근 몇 개월치 회차를 모아서, 항목별로 값이 채워진 가장 최근 회차를 각각 독립적으로 사용합니다.
+async function fetchRealWaterQuality(plant) {
+  const now = new Date();
+  let itemBlocks = [];
+  for (let back = 0; back < 4; back++) {
+    const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back, 1));
+    const yyyy = String(target.getUTCFullYear());
+    const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+    itemBlocks = itemBlocks.concat(await fetchAlgaeMonth(plant, yyyy, mm));
+  }
+  if (itemBlocks.length === 0) {
+    throw new Error(`조류경보제 응답에 데이터가 없습니다(지점 ${plant.swmnCode}, 최근 4개월 조회)`);
   }
 
   return {
-    water_temp_c: parseNumeric(extractTag(latestBlock, 'iemWtrtp')),
-    geosmin_ng_l: parseNumeric(extractTag(latestBlock, 'iemGeosm')),
-    mib_ng_l: parseNumeric(extractTag(latestBlock, 'iemMib2')),
-    algae_cell_count: parseNumeric(extractTag(latestBlock, 'iemBgalageCellCo')),
+    water_temp_c: latestWithValue(itemBlocks, 'iemWtrtp'),
+    geosmin_ng_l: latestWithValue(itemBlocks, 'iemGeosm'),
+    mib_ng_l: latestWithValue(itemBlocks, 'iemMib2'),
+    algae_cell_count: latestWithValue(itemBlocks, 'iemBgalageCellCo'),
   };
 }
 
