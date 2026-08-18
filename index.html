@@ -603,11 +603,11 @@ function randomizeBasins(){
 
 function randomizeDefaults(){
   PLANTS = DEFAULT_PLANTS.map(p=>({id:p.id, name:p.name}));
-  FACILITY = {capacityPerDay:randomBetween(1.5,4,1)};
+  FACILITY = {capacityPerDay: DEFAULT_FACILITY.capacityPerDay};
   WAREHOUSES = DEFAULT_WAREHOUSES.map(w=>{
-    const capacity = Math.round(randomBetween(100,220,0));
-    const safety = Math.round(randomBetween(30, Math.max(35,capacity*0.6),0));
-    const stock = Math.round(randomBetween(10, capacity,0));
+    const capacity = w.capacity;
+    const safety = Math.round(randomBetween(capacity*0.15, capacity*0.35, 0));
+    const stock = Math.round(randomBetween(capacity*0.05, capacity*0.95, 0));
     return {id:w.id, name:w.name, capacity, stock, safety, dailyOutflow:randomBetween(1,4,1)};
   });
   BASINS = randomizeBasins();
@@ -1195,7 +1195,7 @@ function renderPredictDetail(){
   document.getElementById('predictBasicInfo').innerHTML = `
     정수장: ${plant.name}<br>
     흡착지: ${basinLabel(basin)}<br>
-    활성탄 물량: ${basin.gacTon} 톤<br>
+    활성탄 물량: ${basin.gacTon} ㎥<br>
     운영기간: ${basin.operMonths}개월<br>
     통과 Bed Volume: ${basin.bv.toLocaleString('ko-KR')}
   `;
@@ -1319,7 +1319,7 @@ function buildReportHtml(plant, basin, ev){
     <div class="report-row"><span>정수장</span><span><strong>${plant.name}</strong></span></div>
     <div class="report-row"><span>흡착지</span><span><strong>${basinLabel(basin)}</strong></span></div>
     <div class="report-row"><span>종합 판정</span><span>${badgeHtml(ev.status)}</span></div>
-    <div class="report-row"><span>활성탄 물량</span><span>${basin.gacTon} 톤</span></div>
+    <div class="report-row"><span>활성탄 물량</span><span>${basin.gacTon} ㎥</span></div>
     <div style="margin:14px 0 6px 0; font-weight:700; font-size:13.5px;">지표별 상세</div>
     ${rows}
     <div style="margin:14px 0 6px 0; font-weight:700; font-size:13.5px;">권장 조치</div>
@@ -1334,7 +1334,7 @@ function buildReportText(plant, basin, ev){
   lines.push(`정수장: ${plant.name}`);
   lines.push(`흡착지: ${basinLabel(basin)}`);
   lines.push(`종합 판정: ${ev.status}`);
-  lines.push(`활성탄 물량: ${basin.gacTon} 톤`);
+  lines.push(`활성탄 물량: ${basin.gacTon} ㎥`);
   lines.push('');
   lines.push('[지표별 상세]');
   ev.results.forEach(r=>{
@@ -1436,7 +1436,7 @@ function renderOptimize(){
     const isExpanded = expandedOptimizePlants.has(s.plant.id);
     const visibleBasins = isExpanded ? criticalBasins : criticalBasins.slice(0,1);
     const detailLines = visibleBasins.map(be=>
-      `${basinLabel(be.basin)}: 필요 재생량 ${be.basin.gacTon}톤 · 사유: ${be.ev.exceededList.map(r=>r.label).join(', ')}`
+      `${basinLabel(be.basin)}: 필요 재생량 ${be.basin.gacTon}㎥ · 사유: ${be.ev.exceededList.map(r=>r.label).join(', ')}`
     ).join('<br>');
     const toggleBtn = criticalBasins.length>1 ? `<button class="toggle-btn" data-toggle-optimize-plant="${s.plant.id}">${isExpanded?'▲':'▼'}</button>` : '';
     return `<div class="priority-item">
@@ -1623,7 +1623,7 @@ function renderAdminBasinTable(){
   const basins = basinsOfPlant(plantId);
   document.getElementById('adminBasinTable').innerHTML = `
     <thead><tr>
-      <th>흡착지</th><th>활성탄(톤)</th><th>운영기간(개월)</th><th>BV</th>
+      <th>흡착지</th><th>활성탄(㎥)</th><th>운영기간(개월)</th><th>BV</th>
       <th>요오드가(mg/g)</th><th>DOC(mg/L)</th><th>DBPs(%)</th><th>Geosmin&MIB(ng/L)</th>
     </tr></thead>
     <tbody>
