@@ -88,9 +88,13 @@ a{color:var(--accent); text-decoration:none;}
   background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:28px;
   box-shadow:var(--shadow); backdrop-filter:blur(var(--blur)) saturate(140%); -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);
 }
-.stat-card .stat-header{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
-.stat-card .stat-icon{width:32px; height:32px; flex-shrink:0; border-radius:10px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:16px;}
-.stat-card .stat-header .label{margin-bottom:0;}
+.stat-row{display:flex; gap:10px; flex-wrap:wrap;}
+.stat-row .stat-card{flex:1; min-width:max-content; padding:14px 16px;}
+.stat-row .stat-card .value{font-size:23px;}
+.stat-card .stat-header{display:flex; align-items:center; gap:7px; margin-bottom:7px;}
+.stat-card .stat-icon{width:24px; height:24px; flex-shrink:0; border-radius:8px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:12px;}
+.stat-card .stat-header .label{margin-bottom:0; white-space:nowrap; font-size:12px;}
+.stat-row .stat-card .sub{font-size:11px;}
 .stat-card .label{font-size:16px; font-weight:700; color:var(--text-strong); margin-bottom:10px;}
 .stat-card .value{font-size:36px; font-weight:800; letter-spacing:-0.03em; color:var(--text-strong);}
 .value-clickable{cursor:pointer; display:inline-flex; align-items:baseline; gap:6px; transition:opacity .15s ease, text-decoration-color .15s ease; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:4px;}
@@ -318,7 +322,7 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
     <section class="view" id="view-optimize">
       <div class="page-header"><h1>재생·공급 최적화</h1><p>재생시설·비축창고 현황과 우선순위를 확인하고 시뮬레이션을 실행합니다.</p></div>
 
-      <div class="grid grid-2" style="margin-bottom:8px;">
+      <div class="stat-row" style="margin-bottom:8px;">
         <div class="card stat-card">
           <div class="stat-header"><div class="stat-icon">🔁</div><div class="label">총 활성탄 교체량</div></div>
           <div class="value" id="totalReplaceAmount">-</div>
