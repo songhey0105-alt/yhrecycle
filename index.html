@@ -292,11 +292,10 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
         <table id="plantTable"></table>
       </div>
 
-      <div class="section-title">비축창고 현황</div>
-      <div id="homeWarehouses" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:8px;"></div>
-
-      <div class="section-title">활성탄 순환 구성도</div>
-      <div class="card diagram-card" id="circulationDiagramCard" style="cursor:pointer;">
+      <div class="section-title">비축창고 현황 &amp; 활성탄 순환 구성도</div>
+      <div class="grid grid-2" style="align-items:stretch;">
+        <div id="homeWarehouses" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;"></div>
+        <div class="card diagram-card" id="circulationDiagramCard" style="cursor:pointer;">
         <svg viewBox="0 0 1500 700" role="img" aria-label="왼쪽 데이터 입력, 가운데 정중앙의 작은 통합 엔진을 정수장 4개소와 재생시설·비축창고가 위아래로 감싸는 관리 모니터링 구역, 오른쪽 AI 의사결정 3개 구역으로 구성된 아키텍처" style="width:100%; height:auto; display:block;">
           <defs>
             <marker id="arrowAccentHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#35D7FF"/></marker>
@@ -441,7 +440,8 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
             <text x="1236" y="484" text-anchor="start" class="node-sub">→ 비축창고 신탄 구매 시기·물량</text>
           </g>
         </svg>
-        <div style="margin-top:10px; font-size:11.5px; color:var(--muted); text-align:center;">🔍 클릭하면 크게 볼 수 있습니다</div>
+          <div style="margin-top:10px; font-size:11.5px; color:var(--muted); text-align:center;">🔍 클릭하면 크게 볼 수 있습니다</div>
+        </div>
       </div>
     </section>
 
