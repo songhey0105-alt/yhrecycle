@@ -1774,6 +1774,23 @@ async function answerQuestion(q){
     return;
   }
 
+  // 재생·공급 최적화 탭 물량 지표 (총 교체량/생산량/보충량/소요일)
+  if(lower.includes('교체량')||lower.includes('생산량')||lower.includes('보충')||lower.includes('소요일')||lower.includes('며칠')){
+    const criticalBasins = BASINS.filter(b=>evalPlant(b).status==='임박');
+    const totalReplace = criticalBasins.reduce((sum,b)=>sum+b.gacTon, 0);
+    if(lower.includes('생산량')){
+      addBotMessage(`재생탄 생산량(수율 80%)은 ${fmt(totalReplace*0.8)}㎥입니다. (총 활성탄 교체량 ${fmt(totalReplace)}㎥ 기준)`);
+    } else if(lower.includes('보충')){
+      addBotMessage(`신탄 보충 필요량(손실 20%)은 ${fmt(totalReplace*0.2)}㎥입니다. (총 활성탄 교체량 ${fmt(totalReplace)}㎥ 기준)`);
+    } else if(lower.includes('소요일')||lower.includes('며칠')){
+      const days = FACILITY.capacityPerDay>0 ? Math.ceil(totalReplace/FACILITY.capacityPerDay) : 0;
+      addBotMessage(`전체 재생/교체 소요일은 약 ${totalReplace>0?days:0}일입니다. (총 교체량 ${fmt(totalReplace)}㎥ ÷ 처리능력 ${FACILITY.capacityPerDay}㎥/일)`);
+    } else {
+      addBotMessage(`총 활성탄 교체량은 ${fmt(totalReplace)}㎥입니다. (교체임박 흡착지 기준 합계)`);
+    }
+    return;
+  }
+
   // 정수장별 환경 데이터 (기온·강수량·수온·지오스민·2-MIB·TOC·남조류세포수)
   const envTopic = ENV_TOPICS.find(t=>t.keys.some(k=>lower.includes(k)));
   if(envTopic && plant){
