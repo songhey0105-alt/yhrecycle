@@ -405,14 +405,14 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
           <div class="sub">교체임박 흡착지 기준 합계</div>
         </div>
         <div class="card stat-card">
-          <div class="stat-header"><div class="stat-icon">♻️</div><div class="label">재생탄 생산량 (수율 80%)</div></div>
+          <div class="stat-header"><div class="stat-icon">♻️</div><div class="label">재생탄 생산량 (수율 90%)</div></div>
           <div class="value" id="regenYieldAmount">-</div>
-          <div class="sub">총 교체량 × 80%</div>
+          <div class="sub">총 교체량 × 90%</div>
         </div>
         <div class="card stat-card">
-          <div class="stat-header"><div class="stat-icon">➕</div><div class="label">신탄 보충 필요량 (손실 20%)</div></div>
+          <div class="stat-header"><div class="stat-icon">➕</div><div class="label">신탄 보충 필요량 (손실 10%)</div></div>
           <div class="value" id="freshTopupAmount">-</div>
-          <div class="sub">총 교체량 × 20%</div>
+          <div class="sub">총 교체량 × 10%</div>
         </div>
         <div class="card stat-card">
           <div class="stat-header"><div class="stat-icon">⏱️</div><div class="label">전체 재생/교체 소요일</div></div>
@@ -1503,8 +1503,8 @@ function renderOptimize(){
 
   const criticalBasins = summaries.flatMap(s=>s.summary.basinEvals.filter(be=>be.ev.status==='임박').map(be=>be.basin));
   const totalReplace = criticalBasins.reduce((sum,b)=>sum+b.gacTon, 0);
-  const regenYield = totalReplace * 0.8;
-  const freshTopup = totalReplace * 0.2;
+  const regenYield = totalReplace * 0.9;
+  const freshTopup = totalReplace * 0.1;
   const daysNeeded = FACILITY.capacityPerDay > 0 ? Math.ceil(totalReplace / FACILITY.capacityPerDay) : 0;
 
   document.getElementById('totalReplaceAmount').textContent = fmt(totalReplace) + '㎥';
@@ -1904,9 +1904,9 @@ async function answerQuestion(q){
     const criticalBasins = BASINS.filter(b=>evalPlant(b).status==='임박');
     const totalReplace = criticalBasins.reduce((sum,b)=>sum+b.gacTon, 0);
     if(lower.includes('생산량')){
-      addBotMessage(`재생탄 생산량(수율 80%)은 ${fmt(totalReplace*0.8)}㎥입니다. (총 활성탄 교체량 ${fmt(totalReplace)}㎥ 기준)`);
+      addBotMessage(`재생탄 생산량(수율 90%)은 ${fmt(totalReplace*0.9)}㎥입니다. (총 활성탄 교체량 ${fmt(totalReplace)}㎥ 기준)`);
     } else if(lower.includes('보충')){
-      addBotMessage(`신탄 보충 필요량(손실 20%)은 ${fmt(totalReplace*0.2)}㎥입니다. (총 활성탄 교체량 ${fmt(totalReplace)}㎥ 기준)`);
+      addBotMessage(`신탄 보충 필요량(손실 10%)은 ${fmt(totalReplace*0.1)}㎥입니다. (총 활성탄 교체량 ${fmt(totalReplace)}㎥ 기준)`);
     } else if(lower.includes('소요일')||lower.includes('며칠')){
       const days = FACILITY.capacityPerDay>0 ? Math.ceil(totalReplace/FACILITY.capacityPerDay) : 0;
       addBotMessage(`전체 재생/교체 소요일은 약 ${totalReplace>0?days:0}일입니다. (총 교체량 ${fmt(totalReplace)}㎥ ÷ 처리능력 ${FACILITY.capacityPerDay}㎥/일)`);
