@@ -674,9 +674,9 @@ const NAV_ITEMS = [
 
 const INDICATORS = [
   {key:'iodine', label:'요오드가', unit:'mg/g', direction:'low', trigger:600, warnAt:660,
-    note:'요오드가 500~600mg/g 이하 시 재생 권고'},
-  {key:'doc', label:'DOC (GAC 유출수)', unit:'mg/L', direction:'high', trigger:2, warnAt:1.8,
-    note:'GAC 유출수 DOC 2mg/L 이상 시 재생 권고'},
+    note:'요오드가 600mg/g 이하 시 재생 권고'},
+  {key:'doc', label:'DOC (GAC 유출수)', unit:'mg/L', direction:'high', trigger:10, warnAt:9,
+    note:'GAC 유출수 DOC 10mg/L 이상 시 재생 권고'},
   {key:'dbpsPct', label:'DBPs (수질기준 대비)', unit:'%', direction:'high', trigger:80, warnAt:72,
     note:'GAC 유출수 DBPs가 수질기준의 80% 이상 시 재생 권고'},
   {key:'geosminMib', label:'Geosmin&MIB (GAC 유출수)', unit:'ng/L', direction:'high', trigger:10, warnAt:9,
@@ -728,7 +728,7 @@ const DEFAULT_BASIN_CYCLES = {
   operMonths:[10,22,30,15,26,34],
   bv:[20000,40000,51000,15000,47000],
   iodine:[850,720,880,610,560,940,505,770,690,830,470,900],
-  doc:[1.2,1.8,0.9,2.1,1.5],
+  doc:[6,9,4,11,7.5],
   dbpsPct:[45,70,30,85,60],
   geosminMib:[3,8,2,11,5],
 };
@@ -774,7 +774,7 @@ function randomizeBasins(){
     operMonths:Math.round(randomBetween(3,40,0)),
     bv:Math.round(randomBetween(5000,55000,0)),
     iodine:randomBetween(480,900,1),
-    doc:randomBetween(0.4,2.5,2),
+    doc:randomBetween(2,15,2),
     dbpsPct:randomBetween(15,95,1),
     geosminMib:randomBetween(0.5,12,1),
   }));
@@ -918,7 +918,7 @@ function seedFor(str){
 function trendSeries(plant, ind, months=12){
   const cur = plant[ind.key];
   const seed = seedFor(plant.id + ind.key);
-  const driftDir = Math.sin(seed) >= 0 ? 1 : -1;
+  const driftDir = ind.key === 'iodine' ? 1 : (Math.sin(seed) >= 0 ? 1 : -1);
   const arr=[];
   for(let i=0;i<months;i++){
     const decay = (months-1-i)/(months-1);
@@ -940,13 +940,13 @@ function newId(prefix){
 
 const KB = [
   {keys:['재생 기준','재생기준','전체 기준','기준이 뭐'],
-    answer:'낙동강수계 활성탄 재생 기준은 아래 항목 중 하나라도 해당되면 재생을 권고합니다.\n· 운영기간 2~3년 또는 통과 Bed Volume 50,000\n· 요오드가 500~600 mg/g 이하\n· DOC(유출수) 2 mg/L 이상\n· DBPs(유출수) 수질기준의 80% 이상\n· Geosmin&MIB(유출수) 10 ng/L 이상',
+    answer:'낙동강수계 활성탄 재생 기준은 아래 항목 중 하나라도 해당되면 재생을 권고합니다.\n· 운영기간 2~3년 또는 통과 Bed Volume 50,000\n· 요오드가 600 mg/g 이하\n· DOC(유출수) 10 mg/L 이상\n· DBPs(유출수) 수질기준의 80% 이상\n· Geosmin&MIB(유출수) 10 ng/L 이상',
     source:'K-water연구원, 「입상활성탄 재생기준 수립과 평가 기술」(2012), 낙동강수계 기준'},
   {keys:['요오드가'],
-    answer:'요오드가가 500~600 mg/g 이하로 떨어지면 재생 권고 대상입니다. 재생 후 품질기준은 850 mg/g 이상입니다.',
+    answer:'요오드가가 600 mg/g 이하로 떨어지면 재생 권고 대상입니다. 재생 후 품질기준은 850 mg/g 이상입니다.',
     source:'위 문헌, 표4·표5'},
   {keys:['doc','디오씨'],
-    answer:'GAC 유출수의 DOC 농도가 2 mg/L 이상이면 재생 권고 대상입니다.',
+    answer:'GAC 유출수의 DOC 농도가 10 mg/L 이상이면 재생 권고 대상입니다.',
     source:'위 문헌, 표4'},
   {keys:['dbp','디비피'],
     answer:'GAC 유출수의 DBPs 농도가 수질기준의 80% 이상이면 재생 권고 대상입니다.',
