@@ -96,7 +96,18 @@ a{color:var(--accent); text-decoration:none;}
 .diagram-flow-label{font-size:11px; font-weight:600; fill:var(--accent);}
 .diagram-oversight-label{font-size:10.5px; font-weight:600; fill:var(--muted);}
 .diagram-icon{font-size:20px;}
-#diagramModal .modal{max-width:1000px;}
+.diagram-card .node-label{font-size:13px; font-weight:800; fill:var(--text-strong);}
+.diagram-card .node-sub{font-size:10px; fill:var(--muted);}
+.diagram-card .oversight-label{font-size:9.5px; font-weight:600; fill:var(--muted);}
+.diagram-card .legend-label{font-size:11px; fill:var(--muted);}
+.diagram-card .icon-text{font-size:18px;}
+#diagramModal .modal{max-width:1400px;}
+#diagramModal .node-label{font-size:13px; font-weight:800; fill:var(--text-strong);}
+#diagramModal .node-sub{font-size:10px; fill:var(--muted);}
+#diagramModal .oversight-label{font-size:9.5px; font-weight:600; fill:var(--muted);}
+#diagramModal .legend-label{font-size:11px; fill:var(--muted);}
+#diagramModal .icon-text{font-size:18px;}
+#diagramModal svg text{font-family:inherit;}
 .stat-row{display:flex; gap:10px; flex-wrap:wrap;}
 .stat-row .stat-card{flex:1; min-width:max-content; padding:14px 16px;}
 .stat-row .stat-card .value{font-size:23px;}
@@ -281,74 +292,156 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
         <table id="plantTable"></table>
       </div>
 
-      <div class="section-title">비축창고 현황 &amp; 활성탄 순환 구성도</div>
-      <div class="grid grid-2" style="align-items:stretch;">
-        <div id="homeWarehouses" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;"></div>
-        <div class="card diagram-card" id="circulationDiagramCard" style="cursor:pointer;">
-          <svg viewBox="0 0 900 470" role="img" aria-label="낙동강유역본부가 정수장·재생시설·비축창고를 총괄 관리하는 활성탄 순환 구성도" style="width:100%; height:auto; display:block;">
-            <defs>
-              <marker id="arrowAccentHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#35D7FF"/></marker>
-              <marker id="arrowMutedHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#94A3B8"/></marker>
-            </defs>
-            <g stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4" fill="none" opacity="0.85">
-              <path d="M450,72 L180,110" marker-end="url(#arrowMutedHome)"/>
-              <path d="M450,72 L360,110" marker-end="url(#arrowMutedHome)"/>
-              <path d="M450,72 L540,110" marker-end="url(#arrowMutedHome)"/>
-              <path d="M450,72 L720,110" marker-end="url(#arrowMutedHome)"/>
-            </g>
-            <text x="450" y="93" text-anchor="middle" class="diagram-oversight-label">관리 · 모니터링</text>
-            <rect x="330" y="18" width="240" height="54" rx="14" fill="rgba(53,215,255,.10)" stroke="#35D7FF" stroke-width="1.4"/>
-            <text x="373" y="42" class="diagram-icon">🏢</text>
-            <text x="401" y="42" text-anchor="start" class="diagram-node-label">낙동강유역본부</text>
-            <text x="450" y="59" text-anchor="middle" class="diagram-node-sub">유역 총괄 관리</text>
-            <g>
-              <rect x="105" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
-              <text x="132" y="133" class="diagram-icon">💧</text>
-              <text x="160" y="133" text-anchor="start" class="diagram-node-label">구미정수장</text>
-              <text x="180" y="150" text-anchor="middle" class="diagram-node-sub">GAC 12지 · F/A 6지</text>
-            </g>
-            <g>
-              <rect x="285" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
-              <text x="312" y="133" class="diagram-icon">💧</text>
-              <text x="340" y="133" text-anchor="start" class="diagram-node-label">고령정수장</text>
-              <text x="360" y="150" text-anchor="middle" class="diagram-node-sub">GAC 5지</text>
-            </g>
-            <g>
-              <rect x="465" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
-              <text x="492" y="133" class="diagram-icon">💧</text>
-              <text x="520" y="133" text-anchor="start" class="diagram-node-label">반송정수장</text>
-              <text x="540" y="150" text-anchor="middle" class="diagram-node-sub">F/A 10지</text>
-            </g>
-            <g>
-              <rect x="645" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
-              <text x="672" y="133" class="diagram-icon">💧</text>
-              <text x="700" y="133" text-anchor="start" class="diagram-node-label">연초정수장</text>
-              <text x="720" y="150" text-anchor="middle" class="diagram-node-sub">F/A 4지</text>
-            </g>
-            <path d="M220,162 L190,250" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
-            <path d="M270,250 L300,162" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
-            <text x="192" y="209" text-anchor="end" class="diagram-flow-label">포화탄 이송</text>
-            <text x="308" y="209" text-anchor="start" class="diagram-flow-label">재생탄 공급(수율90%)</text>
-            <rect x="90" y="250" width="280" height="58" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
-            <text x="146" y="277" class="diagram-icon">♻️</text>
-            <text x="174" y="277" text-anchor="start" class="diagram-node-label">활성탄 재생시설 (밀양)</text>
-            <text x="230" y="294" text-anchor="middle" class="diagram-node-sub">처리능력 30㎥/일 · 재생탄은 정수장으로 직접 공급</text>
-            <path d="M670,250 L630,162" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
-            <text x="700" y="212" text-anchor="middle" class="diagram-flow-label">신탄 공급</text>
-            <rect x="530" y="250" width="280" height="58" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
-            <text x="629" y="277" class="diagram-icon">📦</text>
-            <text x="657" y="277" text-anchor="start" class="diagram-node-label">비축창고</text>
-            <text x="670" y="294" text-anchor="middle" class="diagram-node-sub">신탄(구매) 재고 보관</text>
-            <path d="M670,368 L670,312" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
-            <text x="670" y="366" text-anchor="middle" class="diagram-icon">🛍️</text>
-            <text x="670" y="386" text-anchor="middle" class="diagram-oversight-label">외부 구매(신탄)</text>
-            <path d="M370,268 L530,268" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
-            <path d="M530,292 L370,292" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
-            <text x="450" y="262" text-anchor="middle" class="diagram-oversight-label">재생량 알림</text>
-            <text x="450" y="308" text-anchor="middle" class="diagram-oversight-label">재고량 알림</text>
-          </svg>
-          <div style="margin-top:10px; font-size:11.5px; color:var(--muted); text-align:center;">🔍 클릭하면 크게 볼 수 있습니다</div>
-        </div>
+      <div class="section-title">비축창고 현황</div>
+      <div id="homeWarehouses" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:8px;"></div>
+
+      <div class="section-title">활성탄 순환 구성도</div>
+      <div class="card diagram-card" id="circulationDiagramCard" style="cursor:pointer;">
+        <svg viewBox="0 0 1500 700" role="img" aria-label="왼쪽 데이터 입력, 가운데 정중앙의 작은 통합 엔진을 정수장 4개소와 재생시설·비축창고가 위아래로 감싸는 관리 모니터링 구역, 오른쪽 AI 의사결정 3개 구역으로 구성된 아키텍처" style="width:100%; height:auto; display:block;">
+          <defs>
+            <marker id="arrowAccentHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#35D7FF"/></marker>
+            <marker id="arrowMutedHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#94A3B8"/></marker>
+          </defs>
+
+          <line x1="485" y1="20" x2="485" y2="690" stroke="rgba(255,255,255,.12)" stroke-width="1" stroke-dasharray="2 6"/>
+          <line x1="1015" y1="20" x2="1015" y2="690" stroke="rgba(255,255,255,.12)" stroke-width="1" stroke-dasharray="2 6"/>
+
+          <g>
+            <line x1="954" y1="24" x2="984" y2="24" stroke="#35D7FF" stroke-width="1.8"/>
+            <text x="990" y="27.5" class="legend-label">자재 순환</text>
+            <line x1="1104" y1="24" x2="1134" y2="24" stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4"/>
+            <text x="1140" y="27.5" class="legend-label">관리 · 모니터링 / 외부구매</text>
+            <line x1="1344" y1="24" x2="1374" y2="24" stroke="#35D7FF" stroke-width="1.3" stroke-dasharray="1 4" stroke-linecap="round"/>
+            <text x="1380" y="27.5" class="legend-label">데이터 입·출력</text>
+          </g>
+
+          <text x="170" y="175" text-anchor="middle" style="font-size:15px; font-weight:800; fill:#F8FAFC;">① 데이터 입력</text>
+          <text x="750" y="55" text-anchor="middle" style="font-size:15px; font-weight:800; fill:#F8FAFC;">② 관리 모니터링</text>
+          <text x="1330" y="175" text-anchor="middle" style="font-size:15px; font-weight:800; fill:#F8FAFC;">③ AI 의사결정</text>
+
+          <g>
+            <rect x="30" y="200" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="50" y="230" class="icon-text">💧</text>
+            <text x="76" y="226" text-anchor="start" class="node-label">수질 정보</text>
+            <text x="76" y="244" text-anchor="start" class="node-sub">정수장 수질 계측(요오드가·DOC 등)</text>
+          </g>
+          <g>
+            <rect x="30" y="280" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="50" y="310" class="icon-text">⚙️</text>
+            <text x="76" y="306" text-anchor="start" class="node-label">운영 정보</text>
+            <text x="76" y="324" text-anchor="start" class="node-sub">가동시간 · 유량 · Bed Volume 등</text>
+          </g>
+          <g>
+            <rect x="30" y="360" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="50" y="390" class="icon-text">♻️</text>
+            <text x="76" y="386" text-anchor="start" class="node-label">재생 정보</text>
+            <text x="76" y="404" text-anchor="start" class="node-sub">재생탄 품질 · 재생 이력 등</text>
+          </g>
+          <g>
+            <rect x="30" y="440" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="50" y="470" class="icon-text">📦</text>
+            <text x="76" y="466" text-anchor="start" class="node-label">비축 정보</text>
+            <text x="76" y="484" text-anchor="start" class="node-sub">비축창고 재고 · 입출고 이력</text>
+          </g>
+          <path d="M310,232 L472,232 M310,312 L472,312 M310,392 L472,392 M310,472 L472,472" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none" marker-end="url(#arrowAccentHome)"/>
+          <path d="M472,232 L472,472" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none"/>
+          <path d="M472,350 L685,350" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none" marker-end="url(#arrowAccentHome)"/>
+
+          <rect x="625" y="80" width="250" height="54" rx="27" fill="rgba(53,215,255,.10)" stroke="#35D7FF" stroke-width="1.4"/>
+          <text x="750" y="104" text-anchor="middle" class="node-label"><tspan class="icon-text">🏢</tspan> 낙동강유역본부</text>
+          <text x="750" y="121" text-anchor="middle" class="node-sub">유역 총괄 관리</text>
+
+          <g stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4" fill="none" opacity="0.85">
+            <path d="M750,134 L550,170" marker-end="url(#arrowMutedHome)"/>
+            <path d="M750,134 L660,170" marker-end="url(#arrowMutedHome)"/>
+            <path d="M750,134 L840,170" marker-end="url(#arrowMutedHome)"/>
+            <path d="M750,134 L950,170" marker-end="url(#arrowMutedHome)"/>
+          </g>
+
+          <g>
+            <rect x="495" y="170" width="110" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="550" y="192" text-anchor="middle" class="node-label" style="font-size:11.5px;"><tspan style="font-size:14px;">💧</tspan> 구미정수장</text>
+            <text x="550" y="210" text-anchor="middle" class="node-sub" style="font-size:8.5px;">GAC 12지·F/A 6지</text>
+          </g>
+          <g>
+            <rect x="615" y="170" width="110" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="670" y="192" text-anchor="middle" class="node-label" style="font-size:11.5px;"><tspan style="font-size:14px;">💧</tspan> 고령정수장</text>
+            <text x="670" y="210" text-anchor="middle" class="node-sub" style="font-size:8.5px;">GAC 5지</text>
+          </g>
+          <g>
+            <rect x="775" y="170" width="110" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="830" y="192" text-anchor="middle" class="node-label" style="font-size:11.5px;"><tspan style="font-size:14px;">💧</tspan> 반송정수장</text>
+            <text x="830" y="210" text-anchor="middle" class="node-sub" style="font-size:8.5px;">F/A 10지</text>
+          </g>
+          <g>
+            <rect x="895" y="170" width="110" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="950" y="192" text-anchor="middle" class="node-label" style="font-size:11.5px;"><tspan style="font-size:14px;">💧</tspan> 연초정수장</text>
+            <text x="950" y="210" text-anchor="middle" class="node-sub" style="font-size:8.5px;">F/A 4지</text>
+          </g>
+
+          <path d="M750,222 L750,285" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none" marker-end="url(#arrowAccentHome)"/>
+
+          <circle cx="750" cy="350" r="65" fill="#0B1220" stroke="#35D7FF" stroke-width="2"/>
+          <text x="750" y="346" text-anchor="middle" style="font-size:13px; font-weight:800; fill:#F8FAFC;">통합 엔진</text>
+          <text x="750" y="363" text-anchor="middle" style="font-size:8.5px; fill:#94A3B8;">(AI 기반 판단 지원 지향)</text>
+
+          <path d="M750,415 L750,460" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none" marker-end="url(#arrowAccentHome)"/>
+
+          <path d="M600,460 L600,222" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
+          <path d="M615,222 L615,460" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
+          <text x="592" y="340" text-anchor="end" style="font-size:9px; font-weight:600; fill:#35D7FF;">재생탄</text>
+          <text x="623" y="340" text-anchor="start" style="font-size:9px; font-weight:600; fill:#35D7FF;">포화탄</text>
+
+          <rect x="495" y="460" width="205" height="60" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+          <text x="597" y="488" text-anchor="middle" class="node-label" style="font-size:11.5px;"><tspan style="font-size:15px;">♻️</tspan> 재생시설(밀양)</text>
+          <text x="597" y="506" text-anchor="middle" class="node-sub" style="font-size:8.5px;">처리능력 30㎥/일</text>
+
+          <rect x="800" y="460" width="205" height="60" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+          <text x="902" y="488" text-anchor="middle" class="node-label" style="font-size:11.5px;"><tspan style="font-size:15px;">📦</tspan> 비축창고</text>
+          <text x="902" y="506" text-anchor="middle" class="node-sub" style="font-size:8.5px;">신탄(구매) 재고</text>
+
+          <path d="M700,478 L800,478" stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
+          <path d="M800,502 L700,502" stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
+          <text x="750" y="472" text-anchor="middle" class="oversight-label">재생량 알림</text>
+          <text x="750" y="518" text-anchor="middle" class="oversight-label">재고량 알림</text>
+
+          <path d="M890,460 L890,222" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
+          <text x="900" y="340" text-anchor="start" style="font-size:9px; font-weight:600; fill:#35D7FF;">신탄 공급</text>
+
+          <text x="902" y="558" text-anchor="middle" class="icon-text" style="font-size:14px;">🛍️</text>
+          <text x="902" y="576" text-anchor="middle" class="oversight-label">외부 구매(신탄)</text>
+          <path d="M902,548 L902,522" stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
+
+          <path d="M815,350 L1028,350" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none" marker-end="url(#arrowAccentHome)"/>
+          <path d="M1028,232 L1028,472" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none"/>
+          <path d="M1028,232 L1190,232 M1028,312 L1190,312 M1028,392 L1190,392 M1028,472 L1190,472" stroke="#35D7FF" stroke-width="1.2" stroke-dasharray="1 4" stroke-linecap="round" fill="none" marker-end="url(#arrowAccentHome)"/>
+
+          <g>
+            <rect x="1190" y="200" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="1210" y="230" class="icon-text">🔁</text>
+            <text x="1236" y="226" text-anchor="start" class="node-label">교체 시점 결정</text>
+            <text x="1236" y="244" text-anchor="start" class="node-sub">→ 정수장에 교체 임박 알림</text>
+          </g>
+          <g>
+            <rect x="1190" y="280" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="1210" y="310" class="icon-text">⚙️</text>
+            <text x="1236" y="306" text-anchor="start" class="node-label">재생 생산계획</text>
+            <text x="1236" y="324" text-anchor="start" class="node-sub">→ 재생시설 가동·생산량 계획</text>
+          </g>
+          <g>
+            <rect x="1190" y="360" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="1210" y="390" class="icon-text">📦</text>
+            <text x="1236" y="386" text-anchor="start" class="node-label">비축 물량 산정</text>
+            <text x="1236" y="404" text-anchor="start" class="node-sub">→ 비축창고 적정 재고 산정</text>
+          </g>
+          <g>
+            <rect x="1190" y="440" width="280" height="65" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="1210" y="470" class="icon-text">🛍️</text>
+            <text x="1236" y="466" text-anchor="start" class="node-label">구매 계획 수립</text>
+            <text x="1236" y="484" text-anchor="start" class="node-sub">→ 비축창고 신탄 구매 시기·물량</text>
+          </g>
+        </svg>
+        <div style="margin-top:10px; font-size:11.5px; color:var(--muted); text-align:center;">🔍 클릭하면 크게 볼 수 있습니다</div>
       </div>
     </section>
 
