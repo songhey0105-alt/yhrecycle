@@ -1694,7 +1694,28 @@ function renderChatLog(){
   log.scrollTop = log.scrollHeight;
 }
 
-function answerQuestion(q){
+const PLANT_KEYWORDS = [
+  {id:'gumi', keys:['구미']},
+  {id:'goryeong', keys:['고령']},
+  {id:'bansong', keys:['반송']},
+  {id:'yeoncho', keys:['연초']},
+];
+function findMentionedPlantId(lower){
+  const hit = PLANT_KEYWORDS.find(p=>p.keys.some(k=>lower.includes(k)));
+  return hit ? hit.id : null;
+}
+
+const ENV_TOPICS = [
+  {keys:['기온'], field:'air_temp_c', unit:'℃', label:'기온'},
+  {keys:['강수량'], field:'precipitation_mm', unit:'mm', label:'강수량'},
+  {keys:['수온'], field:'water_temp_c', unit:'℃', label:'수온'},
+  {keys:['지오스민'], field:'geosmin_ng_l', unit:'ng/L', label:'지오스민'},
+  {keys:['2-mib','mib'], field:'mib_ng_l', unit:'ng/L', label:'2-MIB'},
+  {keys:['toc'], field:'toc_mg_l', unit:'mg/L', label:'TOC'},
+  {keys:['남조류','조류'], field:'algae_cell_count', unit:'세포/mL', label:'유해남조류 세포수'},
+];
+
+async function answerQuestion(q){
   const lower = q.toLowerCase();
   if((lower.includes('왜')||lower.includes('사유')||lower.includes('이유')) && (lower.includes('임박')||lower.includes('주의')||lower.includes('상태')||lower.includes('선택'))){
     const plant = plantById(state.plantId);
@@ -1712,11 +1733,71 @@ function answerQuestion(q){
     }
     return;
   }
+
+  const plantId = findMentionedPlantId(lower);
+  const plant = plantId ? plantById(plantId) : null;
+
+  // 정수장의 흡착지 개수
+  if(plant && lower.includes('흡착지') && (lower.includes('몇')||lower.includes('개수'))){
+    const basins = basinsOfPlant(plantId);
+    addBotMessage(`${plant.name}은(는) 총 ${basins.length}개 흡착지를 운영 중입니다.`);
+    return;
+  }
+
+  // 정수장 상태 요약
+  if(plant && (lower.includes('상태')||lower.includes('어때')||lower.includes('현황'))){
+    const summary = plantStatusSummary(plantId);
+    const c = summary.basinEvals.filter(be=>be.ev.status==='임박').length;
+    const w = summary.basinEvals.filter(be=>be.ev.status==='주의').length;
+    const n = summary.basinEvals.filter(be=>be.ev.status==='정상').length;
+    addBotMessage(`${plant.name} 현재 상태: 전체 ${summary.basinEvals.length}개 흡착지 중 임박 ${c}개, 주의 ${w}개, 정상 ${n}개입니다.`);
+    return;
+  }
+
+  // 창고 재고/용량
+  if(lower.includes('창고')||lower.includes('재고')||lower.includes('비축')){
+    const plantWh = plant && WAREHOUSES.find(w=>w.name.includes(plant.name.replace('정수장','')));
+    if(plant && !plantWh){
+      addBotMessage(`${plant.name} 전용 비축창고 정보는 등록되어 있지 않습니다. 현재 등록된 창고: ${WAREHOUSES.map(w=>w.name).join(', ') || '없음'}`);
+      return;
+    }
+    const wh = plantWh || WAREHOUSES[0];
+    if(wh){
+      addBotMessage(`${wh.name}의 시설용량은 ${wh.capacity.toLocaleString()}㎥, 현재재고는 ${wh.stock.toLocaleString()}㎥, 안전재고는 ${wh.safety.toLocaleString()}㎥입니다.`);
+      return;
+    }
+  }
+
+  // 재생시설 용량
+  if(lower.includes('재생시설')){
+    addBotMessage(`재생시설의 일일 재생 처리 가능량은 ${FACILITY.capacityPerDay}㎥/일입니다.`);
+    return;
+  }
+
+  // 정수장별 환경 데이터 (기온·강수량·수온·지오스민·2-MIB·TOC·남조류세포수)
+  const envTopic = ENV_TOPICS.find(t=>t.keys.some(k=>lower.includes(k)));
+  if(envTopic && plant){
+    try{
+      const {data, error} = await sb.from('environment_data')
+        .select('*').eq('plant_id', plantId).not(envTopic.field, 'is', null)
+        .order('recorded_date', {ascending:false}).limit(1);
+      if(error) throw error;
+      if(data && data.length){
+        addBotMessage(`${plant.name}의 최근 ${envTopic.label}은(는) ${data[0].recorded_date} 기준 ${data[0][envTopic.field]}${envTopic.unit}입니다.`);
+      } else {
+        addBotMessage(`${plant.name}의 ${envTopic.label} 데이터가 아직 쌓이지 않았습니다.`);
+      }
+    }catch(e){
+      addBotMessage(`${envTopic.label} 데이터를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.`);
+    }
+    return;
+  }
+
   const hit = KB.find(item=>item.keys.some(k=>lower.includes(k)));
   if(hit){
     addBotMessage(hit.answer, hit.source);
   } else {
-    addBotMessage('정확한 답변을 드리기 어려워요. "재생기준", "요오드가", "DOC", "DBPs", "Geosmin", "운영기간", "품질기준" 같은 키워드로 다시 질문해보세요.');
+    addBotMessage('정확한 답변을 드리기 어려워요. "재생기준", "요오드가", "DOC", "DBPs", "Geosmin", "운영기간", "품질기준", 또는 "OO정수장 상태/재고/기온" 같은 키워드로 다시 질문해보세요.');
   }
 }
 
