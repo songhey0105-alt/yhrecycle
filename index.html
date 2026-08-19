@@ -88,6 +88,15 @@ a{color:var(--accent); text-decoration:none;}
   background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:28px;
   box-shadow:var(--shadow); backdrop-filter:blur(var(--blur)) saturate(140%); -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);
 }
+.diagram-card{transition:border-color .15s ease, transform .15s ease;}
+.diagram-card:hover{border-color:var(--accent);}
+.diagram-card svg text{font-family:inherit;}
+.diagram-node-label{font-size:14px; font-weight:800; fill:var(--text-strong);}
+.diagram-node-sub{font-size:10.5px; fill:var(--muted);}
+.diagram-flow-label{font-size:11px; font-weight:600; fill:var(--accent);}
+.diagram-oversight-label{font-size:10.5px; font-weight:600; fill:var(--muted);}
+.diagram-icon{font-size:20px;}
+#diagramModal .modal{max-width:1000px;}
 .stat-row{display:flex; gap:10px; flex-wrap:wrap;}
 .stat-row .stat-card{flex:1; min-width:max-content; padding:14px 16px;}
 .stat-row .stat-card .value{font-size:23px;}
@@ -272,8 +281,75 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
         <table id="plantTable"></table>
       </div>
 
-      <div class="section-title">비축창고 현황</div>
-      <div class="grid" id="homeWarehouses" style="grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));"></div>
+      <div class="section-title">비축창고 현황 &amp; 활성탄 순환 구조</div>
+      <div class="grid grid-2" style="align-items:stretch;">
+        <div id="homeWarehouses" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;"></div>
+        <div class="card diagram-card" id="circulationDiagramCard" style="cursor:pointer;">
+          <svg viewBox="0 0 900 470" role="img" aria-label="낙동강수도지원센터가 정수장·재생시설·비축창고를 총괄 관리하는 활성탄 순환 구조 모식도" style="width:100%; height:auto; display:block;">
+            <defs>
+              <marker id="arrowAccentHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#35D7FF"/></marker>
+              <marker id="arrowMutedHome" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#94A3B8"/></marker>
+            </defs>
+            <g stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="3 4" fill="none" opacity="0.85">
+              <path d="M450,72 L180,110" marker-end="url(#arrowMutedHome)"/>
+              <path d="M450,72 L360,110" marker-end="url(#arrowMutedHome)"/>
+              <path d="M450,72 L540,110" marker-end="url(#arrowMutedHome)"/>
+              <path d="M450,72 L720,110" marker-end="url(#arrowMutedHome)"/>
+            </g>
+            <text x="450" y="93" text-anchor="middle" class="diagram-oversight-label">관리 · 모니터링</text>
+            <rect x="330" y="18" width="240" height="54" rx="14" fill="rgba(53,215,255,.10)" stroke="#35D7FF" stroke-width="1.4"/>
+            <text x="350" y="52" class="diagram-icon">🏢</text>
+            <text x="450" y="42" text-anchor="middle" class="diagram-node-label">낙동강수도지원센터</text>
+            <text x="450" y="59" text-anchor="middle" class="diagram-node-sub">유역 총괄 관리</text>
+            <g>
+              <rect x="105" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+              <text x="120" y="142" class="diagram-icon">💧</text>
+              <text x="180" y="133" text-anchor="middle" class="diagram-node-label">구미정수장</text>
+              <text x="180" y="150" text-anchor="middle" class="diagram-node-sub">GAC 12지 · F/A 6지</text>
+            </g>
+            <g>
+              <rect x="285" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+              <text x="300" y="142" class="diagram-icon">💧</text>
+              <text x="360" y="133" text-anchor="middle" class="diagram-node-label">고령정수장</text>
+              <text x="360" y="150" text-anchor="middle" class="diagram-node-sub">GAC 5지</text>
+            </g>
+            <g>
+              <rect x="465" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+              <text x="480" y="142" class="diagram-icon">💧</text>
+              <text x="540" y="133" text-anchor="middle" class="diagram-node-label">반송정수장</text>
+              <text x="540" y="150" text-anchor="middle" class="diagram-node-sub">F/A 10지</text>
+            </g>
+            <g>
+              <rect x="645" y="110" width="150" height="52" rx="12" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+              <text x="660" y="142" class="diagram-icon">💧</text>
+              <text x="720" y="133" text-anchor="middle" class="diagram-node-label">연초정수장</text>
+              <text x="720" y="150" text-anchor="middle" class="diagram-node-sub">F/A 4지</text>
+            </g>
+            <path d="M220,162 L190,250" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
+            <path d="M270,250 L300,162" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
+            <text x="230" y="212" text-anchor="middle" class="diagram-flow-label">소진 활성탄 이송</text>
+            <text x="230" y="228" text-anchor="middle" class="diagram-flow-label">재생탄 공급(수율80%)</text>
+            <rect x="90" y="250" width="280" height="58" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="108" y="286" class="diagram-icon">♻️</text>
+            <text x="230" y="277" text-anchor="middle" class="diagram-node-label">활성탄 재생시설 (밀양)</text>
+            <text x="230" y="294" text-anchor="middle" class="diagram-node-sub">처리능력 30㎥/일 · 재생탄은 정수장으로 직접 공급</text>
+            <path d="M670,250 L630,162" stroke="#35D7FF" stroke-width="1.6" fill="none" marker-end="url(#arrowAccentHome)"/>
+            <text x="700" y="212" text-anchor="middle" class="diagram-flow-label">신탄 공급</text>
+            <rect x="530" y="250" width="280" height="58" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>
+            <text x="548" y="286" class="diagram-icon">📦</text>
+            <text x="670" y="277" text-anchor="middle" class="diagram-node-label">비축창고</text>
+            <text x="670" y="294" text-anchor="middle" class="diagram-node-sub">신탄(구매) 재고 보관</text>
+            <path d="M670,368 L670,312" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
+            <text x="658" y="366" class="diagram-icon" style="font-size:16px;">🛒</text>
+            <text x="670" y="402" text-anchor="middle" class="diagram-oversight-label">외부 구매(신탄)</text>
+            <path d="M370,268 L530,268" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
+            <path d="M530,292 L370,292" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#arrowMutedHome)"/>
+            <text x="450" y="262" text-anchor="middle" class="diagram-oversight-label">재생량 알림 →</text>
+            <text x="450" y="308" text-anchor="middle" class="diagram-oversight-label">← 재고량 알림</text>
+          </svg>
+          <div style="margin-top:10px; font-size:11.5px; color:var(--muted); text-align:center;">🔍 클릭하면 크게 볼 수 있습니다</div>
+        </div>
+      </div>
     </section>
 
     <!-- 정수장별 예측 -->
@@ -463,6 +539,16 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
     <div id="categoryModalBody"></div>
     <div class="btn-row" style="margin-top:18px;">
       <button class="btn-outline btn" id="btnCloseCategoryModal">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="diagramModal">
+  <div class="modal">
+    <h2>활성탄 순환 구조</h2>
+    <div id="diagramModalBody"></div>
+    <div class="btn-row" style="margin-top:18px;">
+      <button class="btn-outline btn" id="btnCloseDiagramModal">닫기</button>
     </div>
   </div>
 </div>
@@ -1890,6 +1976,14 @@ document.getElementById('btnCloseReport').addEventListener('click', ()=>document
 document.getElementById('reportModal').addEventListener('click', (e)=>{ if(e.target.id==='reportModal') e.currentTarget.classList.remove('show'); });
 document.getElementById('btnCloseCategoryModal').addEventListener('click', ()=>document.getElementById('categoryModal').classList.remove('show'));
 document.getElementById('categoryModal').addEventListener('click', (e)=>{ if(e.target.id==='categoryModal') e.currentTarget.classList.remove('show'); });
+document.getElementById('circulationDiagramCard').addEventListener('click', ()=>{
+  const svg = document.querySelector('#circulationDiagramCard svg');
+  const html = svg.outerHTML.replaceAll('arrowAccentHome','arrowAccentModal').replaceAll('arrowMutedHome','arrowMutedModal');
+  document.getElementById('diagramModalBody').innerHTML = html;
+  document.getElementById('diagramModal').classList.add('show');
+});
+document.getElementById('btnCloseDiagramModal').addEventListener('click', ()=>document.getElementById('diagramModal').classList.remove('show'));
+document.getElementById('diagramModal').addEventListener('click', (e)=>{ if(e.target.id==='diagramModal') e.currentTarget.classList.remove('show'); });
 document.getElementById('btnAdminAuthSubmit').addEventListener('click', submitAdminAuth);
 document.getElementById('btnAdminAuthCancel').addEventListener('click', closeAdminAuthModal);
 document.getElementById('adminAuthInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitAdminAuth(); });
