@@ -1705,6 +1705,23 @@ function findMentionedPlantId(lower){
   return hit ? hit.id : null;
 }
 
+const INDICATOR_KEYWORDS = [
+  {keys:['요오드가'], indKey:'iodine'},
+  {keys:['doc','디오씨'], indKey:'doc'},
+  {keys:['dbp','디비피'], indKey:'dbpsPct'},
+  {keys:['geosmin','mib','지오스민'], indKey:'geosminMib'},
+  {keys:['운영기간'], indKey:'operMonths'},
+  {keys:['bv','bed volume','베드볼륨'], indKey:'bv'},
+];
+function findMentionedBasin(lower, plantId){
+  if(!plantId) return null;
+  const m = lower.match(/(gac|f\/a|fa)\s*(\d+)\s*지/);
+  if(!m) return null;
+  const raw = m[1].toUpperCase();
+  const carbonSpec = raw==='FA' ? 'F/A' : raw;
+  return basinById(basinId(plantId, carbonSpec, m[2]));
+}
+
 const ENV_TOPICS = [
   {keys:['기온'], field:'air_temp_c', unit:'℃', label:'기온'},
   {keys:['강수량'], field:'precipitation_mm', unit:'mm', label:'강수량'},
@@ -1736,6 +1753,28 @@ async function answerQuestion(q){
 
   const plantId = findMentionedPlantId(lower);
   const plant = plantId ? plantById(plantId) : null;
+
+  // 특정 흡착지의 지표 값 (예: "구미정수장 F/A 1지의 요오드가를 알려줘")
+  const mentionedBasin = plant && findMentionedBasin(lower, plantId);
+  if(plant && mentionedBasin){
+    const indHit = INDICATOR_KEYWORDS.find(item=>item.keys.some(k=>lower.includes(k)));
+    if(indHit){
+      const ind = INDICATORS.find(i=>i.key===indHit.indKey);
+      const value = currentValue(mentionedBasin, ind);
+      const r = evalIndicator(ind, value);
+      const statusLabel = r.exceeded ? '기준 초과' : (r.warn ? '기준 근접' : '정상 범위');
+      addBotMessage(`${plant.name} ${basinLabel(mentionedBasin)}의 ${ind.label}은(는) ${fmt(value)}${ind.unit}입니다. (기준 ${ind.trigger}${ind.unit} · ${statusLabel})`, 'K-water연구원(2012), 낙동강수계 기준');
+      return;
+    }
+    const ev = evalPlant(mentionedBasin);
+    if(ev.status==='정상'){
+      addBotMessage(`${plant.name} ${basinLabel(mentionedBasin)}은(는) 현재 정상입니다. 모든 지표가 기준 범위 내에 있습니다.`);
+    } else {
+      const list = (ev.exceededList.length?ev.exceededList:ev.warnList).map(r=>`${r.label}(${fmt(r.value)}${r.unit}, 기준 ${r.trigger}${r.unit})`).join(', ');
+      addBotMessage(`${plant.name} ${basinLabel(mentionedBasin)}은(는) 현재 ${ev.status} 상태입니다. 관련 지표: ${list}`, 'K-water연구원(2012), 낙동강수계 기준');
+    }
+    return;
+  }
 
   // 정수장의 흡착지 개수
   if(plant && lower.includes('흡착지') && (lower.includes('몇')||lower.includes('개수'))){
