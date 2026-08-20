@@ -1950,6 +1950,10 @@ async function answerQuestion(q){
   // 특정 흡착지의 지표 값 (예: "구미정수장 F/A 1지의 요오드가를 알려줘")
   const mentionedBasin = plant && findMentionedBasin(lower, plantId);
   if(plant && mentionedBasin){
+    if(lower.includes('용량')||lower.includes('포설량')){
+      addBotMessage(`${plant.name} ${basinLabel(mentionedBasin)}의 활성탄 포설 용량은 ${fmt(mentionedBasin.gacTon)}㎥입니다.`);
+      return;
+    }
     const indHit = INDICATOR_KEYWORDS.find(item=>item.keys.some(k=>lower.includes(k)));
     if(indHit){
       const ind = INDICATORS.find(i=>i.key===indHit.indKey);
@@ -1966,6 +1970,19 @@ async function answerQuestion(q){
       const list = (ev.exceededList.length?ev.exceededList:ev.warnList).map(r=>`${r.label}(${fmt(r.value)}${r.unit}, 기준 ${r.trigger}${r.unit})`).join(', ');
       addBotMessage(`${plant.name} ${basinLabel(mentionedBasin)}은(는) 현재 ${ev.status} 상태입니다. 관련 지표: ${list}`, 'K-water연구원(2012), 낙동강수계 기준');
     }
+    return;
+  }
+
+  // 정수장 지별 활성탄 포설 용량 (예: "구미정수장 지별 용량 알려줘")
+  if(plant && !mentionedBasin && (lower.includes('용량')||lower.includes('포설량'))){
+    const basins = basinsOfPlant(plantId);
+    const bySpec = {};
+    basins.forEach(b=>{ if(!bySpec[b.carbonSpec]) bySpec[b.carbonSpec]=[]; bySpec[b.carbonSpec].push(b); });
+    const parts = Object.keys(bySpec).map(spec=>{
+      const list = bySpec[spec];
+      return `${spec} ${list.length}지(각 ${fmt(list[0].gacTon)}㎥)`;
+    });
+    addBotMessage(`${plant.name}의 지별 활성탄 포설 용량은 ${parts.join(', ')}입니다.`);
     return;
   }
 
