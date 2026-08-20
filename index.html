@@ -712,6 +712,14 @@ const BASIN_STRUCTURE = {
   yeoncho: Array.from({length:4}, (_,i)=>({carbonSpec:'F/A', basinNo:String(i+1)})),
 };
 
+/* 정수장 지별 활성탄 포설량(㎥) — 실측 고정값 */
+const BASIN_CAPACITY = {
+  gumi: {GAC:240, 'F/A':45},
+  goryeong: {GAC:96},
+  bansong: {'F/A':101},
+  yeoncho: {'F/A':30},
+};
+
 function basinId(plantId, carbonSpec, basinNo){
   return `${plantId}-${carbonSpec}-${basinNo}`.replace(/\s+/g,'_');
 }
@@ -725,7 +733,6 @@ function flattenBasinStructure(){
 }
 
 const DEFAULT_BASIN_CYCLES = {
-  gacTon:[8,10,12,9,11],
   operMonths:[10,22,30,15,26,34],
   bv:[20000,40000,51000,15000,47000],
   iodine:[850,720,880,610,560,940,505,770,690,830,470,900],
@@ -739,7 +746,7 @@ function buildDefaultBasins(){
   return flattenBasinStructure().map((b,idx)=>({
     id: basinId(b.plantId, b.carbonSpec, b.basinNo),
     plantId:b.plantId, carbonSpec:b.carbonSpec, basinNo:b.basinNo,
-    gacTon: c.gacTon[idx % c.gacTon.length],
+    gacTon: BASIN_CAPACITY[b.plantId][b.carbonSpec],
     operMonths: c.operMonths[idx % c.operMonths.length],
     bv: c.bv[idx % c.bv.length],
     iodine: c.iodine[idx % c.iodine.length],
@@ -771,7 +778,7 @@ function randomizeBasins(){
   return flattenBasinStructure().map(b=>({
     id: basinId(b.plantId, b.carbonSpec, b.basinNo),
     plantId:b.plantId, carbonSpec:b.carbonSpec, basinNo:b.basinNo,
-    gacTon:Math.round(randomBetween(6,18,0)),
+    gacTon:BASIN_CAPACITY[b.plantId][b.carbonSpec],
     operMonths:Math.round(randomBetween(3,40,0)),
     bv:Math.round(randomBetween(5000,55000,0)),
     iodine:randomBetween(480,900,1),
