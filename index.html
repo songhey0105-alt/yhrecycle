@@ -101,7 +101,9 @@ a{color:var(--accent); text-decoration:none;}
 .diagram-card .oversight-label{font-size:9.5px; font-weight:600; fill:var(--muted);}
 .diagram-card .legend-label{font-size:11px; fill:var(--muted);}
 .diagram-card .icon-text{font-size:18px;}
-#diagramModal .modal{max-width:1400px;}
+#diagramModal .modal{max-width:1400px; position:relative;}
+.modal-close-x{position:absolute; top:18px; right:18px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.08); border:1px solid var(--card-border); color:var(--text); font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s ease, color .15s ease;}
+.modal-close-x:hover{background:rgba(255,255,255,.16); color:var(--accent);}
 #diagramModal .node-label{font-size:13px; font-weight:800; fill:var(--text-strong);}
 #diagramModal .node-sub{font-size:10px; fill:var(--muted);}
 #diagramModal .oversight-label{font-size:9.5px; font-weight:600; fill:var(--muted);}
@@ -639,11 +641,9 @@ label.field-label{font-size:12.5px; color:var(--muted); display:block; margin-bo
 
 <div class="modal-backdrop" id="diagramModal">
   <div class="modal">
+    <button class="modal-close-x" id="btnCloseDiagramModal" aria-label="닫기">✕</button>
     <h2>활성탄 순환 구성도</h2>
     <div id="diagramModalBody"></div>
-    <div class="btn-row" style="margin-top:18px;">
-      <button class="btn-outline btn" id="btnCloseDiagramModal">닫기</button>
-    </div>
   </div>
 </div>
 
