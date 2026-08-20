@@ -1660,17 +1660,23 @@ function runSimulation(){
   const demandFactor = parseFloat(document.getElementById('simDemandFactor').value) || 1.0;
   const period = parseInt(document.getElementById('simPeriod').value, 10);
 
+  // 재생시설의 재생탄은 정수장에 직접 공급되고 비축창고를 거치지 않으므로,
+  // 창고는 정수장 총수요 중 재생시설이 감당하지 못한 나머지만큼만 신탄으로 소모됩니다.
+  const regenOutputPerDay = capacity * 0.9;
+
   const stocks = WAREHOUSES.map(w=>w.stock);
   const series = WAREHOUSES.map(w=>[w.stock]);
   const depletionDay = WAREHOUSES.map((w,i)=> stocks[i] < w.safety ? 0 : null);
+  let totalFreshNeeded = 0;
 
   for(let d=1; d<=period; d++){
-    WAREHOUSES.forEach((w,i)=>{ stocks[i] = Math.max(0, stocks[i] - w.dailyOutflow*demandFactor); });
-    const deficits = WAREHOUSES.map((w,i)=>Math.max(0, w.safety - stocks[i]));
-    const totalDeficit = deficits.reduce((s,v)=>s+v, 0);
+    const totalDemand = WAREHOUSES.reduce((s,w)=>s+w.dailyOutflow*demandFactor, 0);
+    const regenCovered = Math.min(totalDemand, regenOutputPerDay);
     WAREHOUSES.forEach((w,i)=>{
-      const share = totalDeficit>0 ? deficits[i]/totalDeficit : 1/WAREHOUSES.length;
-      stocks[i] = Math.min(w.capacity, stocks[i] + capacity*share);
+      const demandShare = totalDemand>0 ? (w.dailyOutflow*demandFactor)/totalDemand : 1/WAREHOUSES.length;
+      const netOutflow = Math.max(0, w.dailyOutflow*demandFactor - regenCovered*demandShare);
+      stocks[i] = Math.max(0, stocks[i] - netOutflow);
+      totalFreshNeeded += netOutflow;
     });
     WAREHOUSES.forEach((w,i)=>{
       series[i].push(+stocks[i].toFixed(1));
@@ -1693,10 +1699,10 @@ function runSimulation(){
 
   let recommendation;
   if(worst && worst.depletionDay!==null){
-    recommendation = `${worst.warehouse.name}는 시뮬레이션 기준 D+${worst.depletionDay}일에 안전재고 이하로 떨어질 것으로 예상됩니다. 재생시설 처리 물량을 ${worst.warehouse.name}에 우선 배정하세요.`;
-    if(topCritical) recommendation += ` 재생 우선순위 1위인 ${topCritical.plant.name}의 활성탄 재생을 앞당기는 것을 권장합니다.`;
+    recommendation = `비축창고는 신탄만 공급하므로, 재생시설이 정수장에 직접 공급하는 재생탄(일 ${fmt(regenOutputPerDay)}㎥)을 제외한 나머지 수요만큼만 창고 재고가 소모됩니다. ${worst.warehouse.name}는 시뮬레이션 기준 D+${worst.depletionDay}일에 안전재고 이하로 떨어질 것으로 예상되며, 기간 중 총 ${fmt(totalFreshNeeded)}㎥의 신탄을 추가 구매해 보충하는 것을 권장합니다.`;
+    if(topCritical) recommendation += ` 재생 우선순위 1위인 ${topCritical.plant.name}의 활성탄 재생을 앞당기면 신탄 구매 필요량을 더 줄일 수 있습니다.`;
   } else {
-    recommendation = `설정한 조건에서는 시뮬레이션 기간(${period}일) 내 안전재고 이하로 떨어지는 창고가 없습니다.`;
+    recommendation = `설정한 조건에서는 재생시설 공급분(일 ${fmt(regenOutputPerDay)}㎥)을 제외하고도 시뮬레이션 기간(${period}일) 내 안전재고 이하로 떨어지는 창고가 없습니다.`;
   }
 
   document.getElementById('simResult').innerHTML = `
