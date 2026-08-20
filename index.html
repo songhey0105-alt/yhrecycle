@@ -1597,7 +1597,21 @@ function openPlantBasinModal(plantId, status){
 }
 
 /* ===================== 재생·공급 최적화 ===================== */
+const IODINE_IND = INDICATORS.find(i=>i.key==='iodine');
+const OPER_IND = INDICATORS.find(i=>i.key==='operMonths');
+
+// 0: 요오드가·운영기간 둘 다 기준 초과, 1: 둘 중 하나만 초과, 2: 둘 다 초과 아님(다른 지표로만 임박)
+function basinPriorityTier(basin){
+  const iodineExceeded = evalIndicator(IODINE_IND, basin.iodine).exceeded;
+  const operExceeded = evalIndicator(OPER_IND, basin.operMonths).exceeded;
+  if(iodineExceeded && operExceeded) return 0;
+  if(iodineExceeded || operExceeded) return 1;
+  return 2;
+}
+
 function basinPriorityCompare(a, b){
+  const tierDiff = basinPriorityTier(a) - basinPriorityTier(b);
+  if(tierDiff !== 0) return tierDiff;
   if(a.iodine !== b.iodine) return a.iodine - b.iodine; // 요오드값 낮은 순
   return b.operMonths - a.operMonths; // 운영기간 긴 순
 }
