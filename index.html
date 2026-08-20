@@ -1597,6 +1597,11 @@ function openPlantBasinModal(plantId, status){
 }
 
 /* ===================== 재생·공급 최적화 ===================== */
+function basinPriorityCompare(a, b){
+  if(a.iodine !== b.iodine) return a.iodine - b.iodine; // 요오드값 낮은 순
+  return b.operMonths - a.operMonths; // 운영기간 긴 순
+}
+
 function renderOptimize(){
   const summaries = PLANTS.map(p=>({plant:p, summary:plantStatusSummary(p.id)}));
   const criticalPlants = summaries.filter(s=>s.summary.status==='임박');
@@ -1614,12 +1619,11 @@ function renderOptimize(){
   document.getElementById('totalDaysNeeded').textContent = totalReplace>0 ? daysNeeded + '일' : '0일';
   document.getElementById('totalDaysNeededSub').textContent = `재생시설 처리능력 ${FACILITY.capacityPerDay}㎥/일 기준`;
 
-  const ranked = criticalPlants.slice().sort((a,b)=>
-    b.summary.basinEvals.filter(be=>be.ev.status==='임박').length - a.summary.basinEvals.filter(be=>be.ev.status==='임박').length
-  );
+  const worstCriticalBasin = s=>s.summary.basinEvals.filter(be=>be.ev.status==='임박').map(be=>be.basin).sort(basinPriorityCompare)[0];
+  const ranked = criticalPlants.slice().sort((a,b)=>basinPriorityCompare(worstCriticalBasin(a), worstCriticalBasin(b)));
 
   document.getElementById('plantPriorityList').innerHTML = ranked.length ? ranked.map((s,i)=>{
-    const criticalBasins = s.summary.basinEvals.filter(be=>be.ev.status==='임박');
+    const criticalBasins = s.summary.basinEvals.filter(be=>be.ev.status==='임박').sort((x,y)=>basinPriorityCompare(x.basin,y.basin));
     const isExpanded = expandedOptimizePlants.has(s.plant.id);
     const visibleBasins = isExpanded ? criticalBasins : criticalBasins.slice(0,1);
     const detailLines = visibleBasins.map(be=>
